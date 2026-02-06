@@ -47,25 +47,35 @@ export function registerDeleteCommand(program: Command): void {
         return;
       }
 
-      if (
-        !confirm(
-          `Delete ${resolved.length} todo${resolved.length > 1 ? "s" : ""}?`,
-          { noInput: opts.noInput, force: cmdOpts.force as boolean }
-        )
-      ) {
-        outputMessage("Cancelled.", opts);
-        return;
+      const maxTitleLen = Math.max((process.stdout.columns || 80) - 20, 20);
+      const trimTitle = (t: string) =>
+        t.length > maxTitleLen ? t.slice(0, maxTitleLen - 1) + "…" : t;
+
+      const deleted: typeof resolved = [];
+      for (const r of resolved) {
+        if (
+          !confirm(`Delete "${trimTitle(r.title)}"?`, {
+            noInput: opts.noInput,
+            force: cmdOpts.force as boolean,
+          })
+        ) {
+          outputMessage(`Skipped: ${r.title}`, opts);
+          continue;
+        }
+        deleteTodo(r.id);
+        deleted.push(r);
       }
 
-      for (const r of resolved) {
-        deleteTodo(r.id);
+      if (deleted.length === 0) {
+        outputMessage("Nothing deleted.", opts);
+        return;
       }
 
       const fmt = getFormat(opts);
       if (fmt === "json") {
-        console.log(formatJson(resolved.map((r) => ({ ...r, deleted: true }))));
+        console.log(formatJson(deleted.map((r) => ({ ...r, deleted: true }))));
       } else {
-        for (const r of resolved) {
+        for (const r of deleted) {
           outputMessage(`Deleted: ${r.title}`, opts);
         }
       }
