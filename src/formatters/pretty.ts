@@ -104,16 +104,22 @@ export function formatTodoDetail(t: TodoWithList): string {
     lines.push(`${c().dim("Due:")}      ${label}`);
   }
 
-  if (t.notes) {
-    lines.push(`${c().dim("Notes:")}    ${t.notes}`);
-  }
-
   if (t.is_completed && t.completed_at) {
     lines.push(`${c().dim("Done:")}     ${t.completed_at}`);
   }
 
   lines.push(`${c().dim("Created:")}  ${t.created_at}`);
   lines.push(`${c().dim("ID:")}       ${t.id}`);
+
+  if (t.notes) {
+    const noteLines = t.notes.split("\n");
+    lines.push(`${c().dim("Notes:")}    ${noteLines[0]}`);
+    const pad = "          ";
+    for (let i = 1; i < noteLines.length; i++) {
+      lines.push(`${pad}${noteLines[i]}`);
+    }
+  }
+
   return lines.join("\n");
 }
 

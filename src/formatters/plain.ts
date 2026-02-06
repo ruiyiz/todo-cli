@@ -13,7 +13,7 @@ export function formatTodosPlain(todos: TodoWithList[], startIndex = 1): string 
 }
 
 export function formatTodoDetailPlain(t: TodoWithList): string {
-  return [t.id, t.is_completed ? "x" : " ", t.title, t.list_title, t.due_date ?? "", t.priority, t.notes ?? "", t.created_at, t.completed_at ?? ""].join("\t");
+  return [t.id, t.is_completed ? "x" : " ", t.title, t.list_title, t.due_date ?? "", t.priority, t.created_at, t.completed_at ?? "", t.notes ?? ""].join("\t");
 }
 
 export function formatListsPlain(lists: ListWithCount[]): string {
