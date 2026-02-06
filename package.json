@@ -1,0 +1,17 @@
+{
+  "name": "todo-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "todo": "src/index.ts"
+  },
+  "dependencies": {
+    "chalk": "^5.4",
+    "chrono-node": "^2.7",
+    "commander": "^14"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.7"
+  }
+}
