@@ -60,28 +60,29 @@ export function formatTodosPretty(todos: TodoWithList[], startIndex = 1): string
     const parts = [idx, check, list];
 
     // 4 (idx) + 1 (check) + LIST_NAME_MAX (list) + spaces between = 4+1+1+1+20 = 27
-    let prefixWidth = 27;
+    let suffixWidth = 0;
+    const suffix: string[] = [];
 
     if (t.due_date) {
       const display = formatDateForDisplay(t.due_date);
       const dateStr = isOverdue(t.due_date) && !t.is_completed
         ? c().red(display)
         : c().cyan(display);
-      parts.push(dateStr);
-      prefixWidth += 1 + display.length;
+      suffix.push(dateStr);
+      suffixWidth += 1 + display.length;
     }
 
     const pSym = PRIORITY_SYMBOLS[t.priority];
     if (pSym) {
-      parts.push(priorityColor(t.priority, pSym));
-      prefixWidth += 1 + pSym.length;
+      suffix.push(priorityColor(t.priority, pSym));
+      suffixWidth += 1 + pSym.length;
     }
 
-    const available = termWidth - prefixWidth - 1;
+    const available = termWidth - 27 - suffixWidth - 1;
     const trimmed = trimTitle(t.title, available);
-    const title = t.is_completed ? c().strikethrough.dim(trimmed) : trimmed;
+    const title = t.is_completed ? c().strikethrough.dim(trimmed) : c().bold.white(trimmed);
 
-    parts.push(title);
+    parts.push(title, ...suffix);
     lines.push(parts.join(" "));
   }
   return lines.join("\n");
