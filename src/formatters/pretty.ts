@@ -51,14 +51,48 @@ export function formatTodosPretty(todos: TodoWithList[], startIndex = 1): string
   return lines.join("\n");
 }
 
+export function formatTodoDetail(t: TodoWithList): string {
+  const lines: string[] = [];
+  const check = t.is_completed ? c().green("✓") : c().dim("○");
+  const title = t.is_completed ? c().strikethrough.dim(t.title) : c().bold(t.title);
+  lines.push(`${check} ${title}`);
+  lines.push("");
+  lines.push(`${c().dim("List:")}     ${t.list_title}`);
+  lines.push(`${c().dim("Priority:")} ${t.priority}`);
+
+  if (t.due_date) {
+    const display = formatDateForDisplay(t.due_date);
+    const label = isOverdue(t.due_date) && !t.is_completed
+      ? c().red(`${display} (${t.due_date})`)
+      : `${display} (${t.due_date})`;
+    lines.push(`${c().dim("Due:")}      ${label}`);
+  }
+
+  if (t.notes) {
+    lines.push(`${c().dim("Notes:")}    ${t.notes}`);
+  }
+
+  if (t.is_completed && t.completed_at) {
+    lines.push(`${c().dim("Done:")}     ${t.completed_at}`);
+  }
+
+  lines.push(`${c().dim("Created:")}  ${t.created_at}`);
+  lines.push(`${c().dim("ID:")}       ${t.id}`);
+  return lines.join("\n");
+}
+
 export function formatListsPretty(lists: ListWithCount[]): string {
   if (lists.length === 0) return c().dim("  No lists found.");
 
+  const maxId = Math.max(...lists.map((l) => l.logical_id));
+  const idWidth = String(maxId).length;
+
   return lists
     .map((l) => {
+      const id = c().dim(String(l.logical_id).padStart(idWidth));
       const name = c().bold(l.title);
       const counts = c().dim(`(${l.todo_count - l.completed_count} active, ${l.completed_count} done)`);
-      return `  ${name} ${counts}`;
+      return `  ${id}  ${name} ${counts}`;
     })
     .join("\n");
 }

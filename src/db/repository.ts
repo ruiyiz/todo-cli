@@ -15,7 +15,7 @@ export function getAllLists(): ListWithCount[] {
        FROM lists l
        LEFT JOIN todos t ON t.list_id = l.id
        GROUP BY l.id
-       ORDER BY l.created_at`
+       ORDER BY l.logical_id`
     )
     .all();
 }
@@ -32,7 +32,9 @@ export function getListById(id: string): List | null {
 
 export function createList(id: string, title: string): List {
   const db = getDb();
-  db.run("INSERT INTO lists (id, title) VALUES (?, ?)", [id, title]);
+  const maxRow = db.query<{ m: number | null }, []>("SELECT MAX(logical_id) as m FROM lists").get();
+  const nextId = (maxRow?.m ?? 0) + 1;
+  db.run("INSERT INTO lists (id, logical_id, title) VALUES (?, ?, ?)", [id, nextId, title]);
   return getListById(id)!;
 }
 
@@ -44,6 +46,35 @@ export function renameList(id: string, newTitle: string): void {
 export function deleteList(id: string): void {
   const db = getDb();
   db.run("DELETE FROM lists WHERE id = ?", [id]);
+}
+
+export function resolveList(input: string): List | null {
+  // Try as logical ID (integer)
+  const num = parseInt(input, 10);
+  if (!isNaN(num) && String(num) === input) {
+    const db = getDb();
+    const row = db.query<List, [number]>("SELECT * FROM lists WHERE logical_id = ?").get(num);
+    if (row) return row;
+  }
+  // Try by title, then by UUID
+  return getListByTitle(input) || getListById(input);
+}
+
+export function reassignListId(listUuid: string, newLogicalId: number): void {
+  const db = getDb();
+  const current = db.query<List, [string]>("SELECT * FROM lists WHERE id = ?").get(listUuid);
+  if (!current) throw new Error("List not found");
+  if (current.logical_id === newLogicalId) return;
+
+  const occupying = db.query<List, [number]>("SELECT * FROM lists WHERE logical_id = ?").get(newLogicalId);
+  if (occupying) {
+    // Swap: move occupying list to a temp value, assign target, then fix occupying
+    db.run("UPDATE lists SET logical_id = -1 WHERE id = ?", [occupying.id]);
+    db.run("UPDATE lists SET logical_id = ? WHERE id = ?", [newLogicalId, listUuid]);
+    db.run("UPDATE lists SET logical_id = ? WHERE id = ?", [current.logical_id, occupying.id]);
+  } else {
+    db.run("UPDATE lists SET logical_id = ? WHERE id = ?", [newLogicalId, listUuid]);
+  }
 }
 
 // ── Todo Repository ──

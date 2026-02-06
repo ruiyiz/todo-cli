@@ -9,7 +9,7 @@ import type { GlobalOptions } from "../types.ts";
 export function registerCompleteCommand(program: Command): void {
   program
     .command("complete")
-    .argument("[ids...]", "Todo IDs, indices, or UUID prefixes")
+    .argument("[ids...]", "Todo indices (from last show), UUIDs, or UUID prefixes")
     .option("--dry-run", "Preview which todos would be completed")
     .description("Mark todos as complete")
     .action((ids: string[], cmdOpts: Record<string, unknown>) => {

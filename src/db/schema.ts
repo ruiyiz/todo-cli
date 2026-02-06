@@ -3,6 +3,7 @@ import type { Database } from "bun:sqlite";
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS lists (
   id         TEXT PRIMARY KEY,
+  logical_id INTEGER UNIQUE,
   title      TEXT NOT NULL UNIQUE,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
@@ -39,4 +40,30 @@ INSERT OR IGNORE INTO lists (id, title) VALUES ('00000000-0000-0000-0000-0000000
 
 export function initSchema(db: Database): void {
   db.exec(SCHEMA_SQL);
+  migrate(db);
+}
+
+function migrate(db: Database): void {
+  // Add logical_id column if missing (upgrade from older schema)
+  const cols = db.query<{ name: string }, []>("PRAGMA table_info(lists)").all();
+  const hasLogicalId = cols.some((c) => c.name === "logical_id");
+  if (!hasLogicalId) {
+    db.exec("ALTER TABLE lists ADD COLUMN logical_id INTEGER");
+  }
+
+  // Backfill logical_id for any rows that don't have one
+  const unassigned = db
+    .query<{ id: string }, []>("SELECT id FROM lists WHERE logical_id IS NULL ORDER BY created_at")
+    .all();
+  if (unassigned.length > 0) {
+    const maxRow = db.query<{ m: number | null }, []>("SELECT MAX(logical_id) as m FROM lists").get();
+    let next = (maxRow?.m ?? 0) + 1;
+    const stmt = db.prepare("UPDATE lists SET logical_id = ? WHERE id = ?");
+    for (const row of unassigned) {
+      stmt.run(next++, row.id);
+    }
+  }
+
+  // Ensure unique index exists (for databases migrated via ALTER TABLE)
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_lists_logical_id ON lists(logical_id)");
 }

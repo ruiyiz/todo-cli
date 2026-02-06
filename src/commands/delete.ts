@@ -10,7 +10,7 @@ import type { GlobalOptions } from "../types.ts";
 export function registerDeleteCommand(program: Command): void {
   program
     .command("delete")
-    .argument("[ids...]", "Todo IDs, indices, or UUID prefixes")
+    .argument("[ids...]", "Todo indices (from last show), UUIDs, or UUID prefixes")
     .option("--dry-run", "Preview which todos would be deleted")
     .option("--force", "Skip confirmation")
     .description("Delete todos")

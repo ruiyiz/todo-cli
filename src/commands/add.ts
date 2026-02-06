@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { getListByTitle, createTodo } from "../db/repository.ts";
+import { resolveList, createTodo } from "../db/repository.ts";
 import { outputMessage, outputTodos } from "../formatters/index.ts";
 import { parseDate, formatDateForDb } from "../utils/date.ts";
 import { getFormat } from "../formatters/index.ts";
@@ -11,7 +11,7 @@ export function registerAddCommand(program: Command): void {
     .command("add")
     .argument("[title]", "Title of the todo")
     .option("--title <title>", "Title (alternative to positional arg)")
-    .option("--list <name>", "List to add to", "Todos")
+    .option("--list <name>", "List to add to (name or numeric ID)", "Todos")
     .option("--due <date>", "Due date (natural language)")
     .option("--notes <notes>", "Additional notes")
     .option(
@@ -30,7 +30,7 @@ export function registerAddCommand(program: Command): void {
       }
 
       const listName = cmdOpts.list as string;
-      const list = getListByTitle(listName);
+      const list = resolveList(listName);
       if (!list) {
         console.error(`List "${listName}" not found. Create it with: todo list "${listName}" --create`);
         process.exit(1);

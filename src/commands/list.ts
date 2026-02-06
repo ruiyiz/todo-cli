@@ -1,36 +1,36 @@
 import type { Command } from "commander";
 import {
   getAllLists,
+  resolveList,
   getListByTitle,
   createList,
   renameList,
+  reassignListId,
   deleteList,
-  getTodosByListTitle,
 } from "../db/repository.ts";
-import { outputLists, outputTodos, outputMessage } from "../formatters/index.ts";
+import { outputLists, outputMessage } from "../formatters/index.ts";
 import { confirm } from "../utils/prompt.ts";
 import type { GlobalOptions } from "../types.ts";
 
 export function registerListCommand(program: Command): void {
   program
     .command("list")
-    .argument("[name]", "List name to show or manage")
-    .option("--create", "Create the list if it does not exist")
+    .argument("[list]", "List name or numeric ID")
+    .option("--create", "Create a new list (argument is the name)")
     .option("--rename <new>", "Rename the list")
-    .option("--delete", "Delete the list")
+    .option("--id <number>", "Reassign numeric ID (swaps if taken)")
+    .option("--delete", "Delete the list and all its todos")
     .option("--force", "Skip confirmation for destructive actions")
-    .description("Manage todo lists")
+    .description("Manage todo lists (show all lists when no argument given)")
     .action((name: string | undefined, cmdOpts: Record<string, unknown>) => {
       const opts = program.opts<GlobalOptions>();
 
-      // No name: show all lists
       if (!name) {
         const lists = getAllLists();
         outputLists(lists, opts);
         return;
       }
 
-      // --create: create a new list
       if (cmdOpts.create) {
         const existing = getListByTitle(name);
         if (existing) {
@@ -38,25 +38,39 @@ export function registerListCommand(program: Command): void {
           return;
         }
         const list = createList(crypto.randomUUID(), name);
-        outputMessage(`Created list "${list.title}".`, opts);
+        outputMessage(`Created list "${list.title}" (ID ${list.logical_id}).`, opts);
         return;
       }
 
-      // --rename: rename existing list
       if (cmdOpts.rename) {
-        const list = getListByTitle(name);
+        const list = resolveList(name);
         if (!list) {
           console.error(`List "${name}" not found.`);
           process.exit(1);
         }
         renameList(list.id, cmdOpts.rename as string);
-        outputMessage(`Renamed "${name}" to "${cmdOpts.rename}".`, opts);
+        outputMessage(`Renamed "${list.title}" to "${cmdOpts.rename}".`, opts);
         return;
       }
 
-      // --delete: delete a list
+      if (cmdOpts.id !== undefined) {
+        const newId = parseInt(cmdOpts.id as string, 10);
+        if (isNaN(newId) || newId < 1) {
+          console.error("ID must be a positive integer.");
+          process.exit(1);
+        }
+        const list = resolveList(name);
+        if (!list) {
+          console.error(`List "${name}" not found.`);
+          process.exit(1);
+        }
+        reassignListId(list.id, newId);
+        outputMessage(`Reassigned "${list.title}" to ID ${newId}.`, opts);
+        return;
+      }
+
       if (cmdOpts.delete) {
-        const list = getListByTitle(name);
+        const list = resolveList(name);
         if (!list) {
           console.error(`List "${name}" not found.`);
           process.exit(1);
@@ -66,7 +80,7 @@ export function registerListCommand(program: Command): void {
           process.exit(1);
         }
         if (
-          !confirm(`Delete list "${name}" and all its todos?`, {
+          !confirm(`Delete list "${list.title}" and all its todos?`, {
             noInput: opts.noInput,
             force: cmdOpts.force as boolean,
           })
@@ -75,17 +89,17 @@ export function registerListCommand(program: Command): void {
           return;
         }
         deleteList(list.id);
-        outputMessage(`Deleted list "${name}".`, opts);
+        outputMessage(`Deleted list "${list.title}".`, opts);
         return;
       }
 
-      // Default: show todos in named list
-      const list = getListByTitle(name);
-      if (!list) {
+      // Default: show info for the named list
+      const resolved = resolveList(name);
+      if (!resolved) {
         console.error(`List "${name}" not found. Use --create to create it.`);
         process.exit(1);
       }
-      const todos = getTodosByListTitle(name);
-      outputTodos(todos, opts);
+      const lists = getAllLists().filter((l) => l.id === resolved.id);
+      outputLists(lists, opts);
     });
 }

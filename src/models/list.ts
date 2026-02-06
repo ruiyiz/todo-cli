@@ -1,5 +1,6 @@
 export interface List {
   id: string;
+  logical_id: number;
   title: string;
   created_at: string;
 }

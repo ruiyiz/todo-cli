@@ -6,6 +6,8 @@ import { registerAddCommand } from "./commands/add.ts";
 import { registerEditCommand } from "./commands/edit.ts";
 import { registerCompleteCommand } from "./commands/complete.ts";
 import { registerDeleteCommand } from "./commands/delete.ts";
+import { registerGetCommand } from "./commands/get.ts";
+import { registerTodayCommand } from "./commands/today.ts";
 import { registerStatusCommand } from "./commands/status.ts";
 
 export function createProgram(): Command {
@@ -20,6 +22,9 @@ export function createProgram(): Command {
     .option("-q, --quiet", "Suppress output")
     .option("--no-color", "Disable colors")
     .option("--no-input", "Disable interactive prompts")
+    .action(() => {
+      program.help();
+    })
     .hook("preAction", () => {
       const opts = program.opts();
       if (opts.color === false) {
@@ -27,9 +32,11 @@ export function createProgram(): Command {
       }
     });
 
+  registerTodayCommand(program);
   registerShowCommand(program);
   registerListCommand(program);
   registerAddCommand(program);
+  registerGetCommand(program);
   registerEditCommand(program);
   registerCompleteCommand(program);
   registerDeleteCommand(program);

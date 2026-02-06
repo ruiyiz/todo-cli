@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { getTodoById, updateTodo, getListByTitle } from "../db/repository.ts";
+import { getTodoById, updateTodo, resolveList } from "../db/repository.ts";
 import { resolveId } from "../utils/id-resolver.ts";
 import { parseDate, formatDateForDb } from "../utils/date.ts";
 import { outputMessage } from "../formatters/index.ts";
@@ -10,9 +10,9 @@ import type { GlobalOptions, Priority } from "../types.ts";
 export function registerEditCommand(program: Command): void {
   program
     .command("edit")
-    .argument("<id>", "Todo ID, index, or UUID prefix")
+    .argument("<id>", "Todo index (from last show), UUID, or UUID prefix")
     .option("--title <title>", "New title")
-    .option("--list <name>", "Move to a different list")
+    .option("--list <name>", "Move to a different list (name or numeric ID)")
     .option("--due <date>", "New due date (natural language)")
     .option("--clear-due", "Remove due date")
     .option("--notes <notes>", "New notes")
@@ -36,7 +36,7 @@ export function registerEditCommand(program: Command): void {
       if (cmdOpts.title) updates.title = cmdOpts.title;
 
       if (cmdOpts.list) {
-        const list = getListByTitle(cmdOpts.list as string);
+        const list = resolveList(cmdOpts.list as string);
         if (!list) {
           console.error(`List "${cmdOpts.list}" not found.`);
           process.exit(1);

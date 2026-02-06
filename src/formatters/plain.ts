@@ -12,8 +12,12 @@ export function formatTodosPlain(todos: TodoWithList[], startIndex = 1): string 
     .join("\n");
 }
 
+export function formatTodoDetailPlain(t: TodoWithList): string {
+  return [t.id, t.is_completed ? "x" : " ", t.title, t.list_title, t.due_date ?? "", t.priority, t.notes ?? "", t.created_at, t.completed_at ?? ""].join("\t");
+}
+
 export function formatListsPlain(lists: ListWithCount[]): string {
   return lists
-    .map((l) => [l.title, l.todo_count, l.completed_count].join("\t"))
+    .map((l) => [l.logical_id, l.title, l.todo_count, l.completed_count].join("\t"))
     .join("\n");
 }
