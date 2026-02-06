@@ -1,18 +1,18 @@
 import type { Command } from "commander";
-import { queryTodos, getListByTitle, saveLastResult } from "../db/repository.ts";
+import { queryTodos, saveLastResult } from "../db/repository.ts";
 import { outputTodos, outputMessage } from "../formatters/index.ts";
-import { todayStr } from "../utils/date.ts";
+import { todayStr, weekEndStr } from "../utils/date.ts";
 import { c } from "../utils/color.ts";
 import type { GlobalOptions } from "../types.ts";
-import type { TodoWithList } from "../models/todo.ts";
 
 export function registerTodayCommand(program: Command): void {
   program
     .command("today")
-    .description("Show today's agenda: overdue, due today, and WIP items")
+    .description("Show today's agenda: overdue, due today, upcoming (7 days), and high-priority items")
     .action(() => {
       const opts = program.opts<GlobalOptions>();
       const today = todayStr();
+      const weekEnd = weekEndStr();
 
       const overdue = queryTodos({ overdueBeforeDate: today, isCompleted: false });
       const dueToday = queryTodos({ dueDateFrom: today, dueDateTo: today, isCompleted: false });
@@ -21,19 +21,19 @@ export function registerTodayCommand(program: Command): void {
       for (const t of overdue) seenIds.add(t.id);
       for (const t of dueToday) seenIds.add(t.id);
 
-      const wipList = getListByTitle("WIP");
-      const wip: TodoWithList[] = [];
-      if (wipList) {
-        const wipTodos = queryTodos({ listId: wipList.id, isCompleted: false });
-        for (const t of wipTodos) {
-          if (!seenIds.has(t.id)) {
-            wip.push(t);
-            seenIds.add(t.id);
-          }
-        }
-      }
+      const tomorrowDate = new Date();
+      tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+      const tomorrowStr = tomorrowDate.toISOString().slice(0, 10);
 
-      const allTodos = [...overdue, ...dueToday, ...wip];
+      const upcomingRaw = queryTodos({ dueDateFrom: tomorrowStr, dueDateTo: weekEnd, isCompleted: false });
+      const upcoming = upcomingRaw.filter((t) => !seenIds.has(t.id));
+      for (const t of upcoming) seenIds.add(t.id);
+
+      const highRaw = queryTodos({ priority: "high", isCompleted: false });
+      const high = highRaw.filter((t) => !seenIds.has(t.id));
+      for (const t of high) seenIds.add(t.id);
+
+      const allTodos = [...overdue, ...dueToday, ...upcoming, ...high];
       saveLastResult(allTodos);
 
       if (opts.json || opts.plain) {
@@ -61,9 +61,16 @@ export function registerTodayCommand(program: Command): void {
         outputMessage("", opts);
       }
 
-      if (wip.length > 0) {
-        outputMessage(c().bold(`WIP (${wip.length}):`), opts);
-        outputTodos(wip, opts, idx);
+      if (upcoming.length > 0) {
+        outputMessage(c().bold(`Upcoming (7 days) (${upcoming.length}):`), opts);
+        outputTodos(upcoming, opts, idx);
+        idx += upcoming.length;
+        outputMessage("", opts);
+      }
+
+      if (high.length > 0) {
+        outputMessage(c().bold(`High priority (${high.length}):`), opts);
+        outputTodos(high, opts, idx);
       }
     });
 }

@@ -9,7 +9,7 @@ import { outputTodos } from "../formatters/index.ts";
 import { todayStr, tomorrowStr, weekEndStr, parseDate, formatDateForDb } from "../utils/date.ts";
 import type { GlobalOptions } from "../types.ts";
 
-type Filter = "today" | "tomorrow" | "week" | "overdue" | "upcoming" | "completed" | "all" | string;
+type Filter = "today" | "tomorrow" | "week" | "overdue" | "upcoming" | "done" | "completed" | "all" | "high" | "medium" | "low" | string;
 
 function buildQuery(filter: Filter, listId?: string): TodoQueryOptions {
   const today = todayStr();
@@ -28,10 +28,17 @@ function buildQuery(filter: Filter, listId?: string): TodoQueryOptions {
       return { ...base, overdueBeforeDate: today, isCompleted: false };
     case "upcoming":
       return { ...base, dueDateFrom: today, isCompleted: false };
+    case "done":
     case "completed":
       return { ...base, isCompleted: true, includeCompleted: true };
     case "all":
       return { ...base, includeCompleted: true };
+    case "high":
+      return { ...base, priority: "high", isCompleted: false };
+    case "medium":
+      return { ...base, priority: "medium", isCompleted: false };
+    case "low":
+      return { ...base, priority: "low", isCompleted: false };
     default: {
       const parsed = parseDate(filter);
       if (parsed) {
@@ -41,7 +48,7 @@ function buildQuery(filter: Filter, listId?: string): TodoQueryOptions {
       if (/^\d{4}-\d{2}-\d{2}$/.test(filter)) {
         return { ...base, dueDateFrom: filter, dueDateTo: filter };
       }
-      console.error(`Unknown filter: "${filter}". Use today, tomorrow, week, overdue, upcoming, completed, all, or a date.`);
+      console.error(`Unknown filter: "${filter}". Use today, tomorrow, week, overdue, upcoming, done, all, high, medium, low, or a date.`);
       process.exit(1);
     }
   }
@@ -52,7 +59,7 @@ export { buildQuery };
 export function registerShowCommand(program: Command): void {
   program
     .command("show")
-    .argument("[filter]", "Filter: today, tomorrow, week, overdue, upcoming, completed, all, or a date")
+    .argument("[filter]", "Filter: today, tomorrow, week, overdue, upcoming, done, all, high, medium, low, or a date")
     .option("-l, --list <name>", "Filter by list (name or numeric ID)")
     .description("Show todos (all active by default)")
     .action((filter: string | undefined, cmdOpts: Record<string, unknown>) => {

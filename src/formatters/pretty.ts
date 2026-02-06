@@ -23,19 +23,44 @@ function priorityColor(priority: string, text: string): string {
   }
 }
 
+const LIST_NAME_MAX = 20;
+
+function trimListName(name: string): string {
+  if (name.length <= LIST_NAME_MAX) return name.padEnd(LIST_NAME_MAX);
+  return name.slice(0, LIST_NAME_MAX - 1) + "…";
+}
+
+const LIST_COLORS = [
+  (text: string) => c().dim(text),
+  (text: string) => c().rgb(130, 130, 160)(text),
+];
+
+function trimTitle(title: string, maxWidth: number): string {
+  if (title.length <= maxWidth) return title;
+  if (maxWidth <= 1) return "…";
+  return title.slice(0, maxWidth - 1) + "…";
+}
+
 export function formatTodosPretty(todos: TodoWithList[], startIndex = 1): string {
   if (todos.length === 0) return c().dim("  No todos found.");
 
+  const termWidth = process.stdout.columns || 80;
   const lines: string[] = [];
+  let colorIdx = 0;
+  let prevList = "";
   for (let i = 0; i < todos.length; i++) {
     const t = todos[i];
+    if (t.list_title !== prevList) {
+      if (prevList !== "") colorIdx = (colorIdx + 1) % LIST_COLORS.length;
+      prevList = t.list_title;
+    }
     const idx = c().dim(`${String(startIndex + i).padStart(3)}.`);
     const check = t.is_completed ? c().green("✓") : c().dim("○");
-    const title = t.is_completed ? c().strikethrough.dim(t.title) : t.title;
-    const parts = [idx, check, title];
+    const list = LIST_COLORS[colorIdx](trimListName(t.list_title));
+    const parts = [idx, check, list];
 
-    const pSym = PRIORITY_SYMBOLS[t.priority];
-    if (pSym) parts.push(priorityColor(t.priority, pSym));
+    // 4 (idx) + 1 (check) + LIST_NAME_MAX (list) + spaces between = 4+1+1+1+20 = 27
+    let prefixWidth = 27;
 
     if (t.due_date) {
       const display = formatDateForDisplay(t.due_date);
@@ -43,9 +68,20 @@ export function formatTodosPretty(todos: TodoWithList[], startIndex = 1): string
         ? c().red(display)
         : c().cyan(display);
       parts.push(dateStr);
+      prefixWidth += 1 + display.length;
     }
 
-    parts.push(c().dim(`[${t.list_title}]`));
+    const pSym = PRIORITY_SYMBOLS[t.priority];
+    if (pSym) {
+      parts.push(priorityColor(t.priority, pSym));
+      prefixWidth += 1 + pSym.length;
+    }
+
+    const available = termWidth - prefixWidth - 1;
+    const trimmed = trimTitle(t.title, available);
+    const title = t.is_completed ? c().strikethrough.dim(trimmed) : trimmed;
+
+    parts.push(title);
     lines.push(parts.join(" "));
   }
   return lines.join("\n");

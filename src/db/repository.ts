@@ -184,6 +184,7 @@ export interface TodoQueryOptions {
   dueDateTo?: string;
   overdueBeforeDate?: string;
   includeCompleted?: boolean;
+  priority?: string;
 }
 
 export function queryTodos(options: TodoQueryOptions): TodoWithList[] {
@@ -217,6 +218,11 @@ export function queryTodos(options: TodoQueryOptions): TodoWithList[] {
     values.push(options.overdueBeforeDate);
   }
 
+  if (options.priority) {
+    conditions.push("t.priority = ?");
+    values.push(options.priority);
+  }
+
   if (!options.includeCompleted && options.isCompleted === undefined) {
     conditions.push("t.is_completed = 0");
   }
@@ -231,14 +237,15 @@ export function queryTodos(options: TodoQueryOptions): TodoWithList[] {
        ${where}
        ORDER BY
          t.is_completed ASC,
+         l.logical_id ASC,
+         t.due_date ASC NULLS LAST,
          CASE t.priority
            WHEN 'high' THEN 0
            WHEN 'medium' THEN 1
            WHEN 'low' THEN 2
            ELSE 3
          END,
-         t.due_date ASC NULLS LAST,
-         t.created_at ASC`
+         t.title ASC`
     )
     .all(...values);
 }
