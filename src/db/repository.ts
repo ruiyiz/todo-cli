@@ -104,7 +104,7 @@ export function createTodo(todo: {
       todo.title,
       todo.list_id,
       todo.due_date ?? null,
-      todo.priority ?? "none",
+      todo.priority ?? "normal",
       todo.notes ?? null,
     ]
   );
@@ -237,14 +237,9 @@ export function queryTodos(options: TodoQueryOptions): TodoWithList[] {
        ${where}
        ORDER BY
          t.is_completed ASC,
+         CASE t.priority WHEN 'prioritized' THEN 0 ELSE 1 END,
          l.logical_id ASC,
          t.due_date ASC NULLS LAST,
-         CASE t.priority
-           WHEN 'high' THEN 0
-           WHEN 'medium' THEN 1
-           WHEN 'low' THEN 2
-           ELSE 3
-         END,
          t.title ASC`
     )
     .all(...values);

@@ -1,0 +1,19 @@
+{
+  "name": "todo-tui",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "todo-tui": "src/index.tsx"
+  },
+  "dependencies": {
+    "ink": "^5.1",
+    "react": "^18.3",
+    "@inkjs/ui": "^2.0",
+    "chrono-node": "^2.7"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^18.3",
+    "typescript": "^5.7"
+  }
+}

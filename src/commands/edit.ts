@@ -16,7 +16,7 @@ export function registerEditCommand(program: Command): void {
     .option("--due <date>", "New due date (natural language)")
     .option("--clear-due", "Remove due date")
     .option("--notes <notes>", "New notes")
-    .option("--priority <level>", "New priority: none, low, medium, high")
+    .option("--priority <level>", "New priority: normal, prioritized")
     .option("--complete", "Mark as complete")
     .option("--incomplete", "Mark as incomplete")
     .description("Edit an existing todo")
@@ -61,8 +61,8 @@ export function registerEditCommand(program: Command): void {
 
       if (cmdOpts.priority) {
         const p = cmdOpts.priority as Priority;
-        if (!["none", "low", "medium", "high"].includes(p)) {
-          console.error(`Invalid priority: "${p}".`);
+        if (!["normal", "prioritized"].includes(p)) {
+          console.error(`Invalid priority: "${p}". Use normal or prioritized.`);
           process.exit(1);
         }
         updates.priority = p;

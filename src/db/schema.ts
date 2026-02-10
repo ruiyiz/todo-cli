@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS todos (
   title        TEXT NOT NULL,
   list_id      TEXT NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
   due_date     TEXT,
-  priority     TEXT NOT NULL DEFAULT 'none' CHECK (priority IN ('none','low','medium','high')),
+  priority     TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('normal','prioritized')),
   is_completed INTEGER NOT NULL DEFAULT 0 CHECK (is_completed IN (0,1)),
   completed_at TEXT,
   notes        TEXT,
@@ -66,4 +66,42 @@ function migrate(db: Database): void {
 
   // Ensure unique index exists (for databases migrated via ALTER TABLE)
   db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_lists_logical_id ON lists(logical_id)");
+
+  // Migrate priority from 4-level (none/low/medium/high) to 2-level (normal/prioritized)
+  const sample = db.query<{ priority: string }, []>("SELECT priority FROM todos LIMIT 1").get();
+  if (sample && ["none", "low", "medium", "high"].includes(sample.priority)) {
+    db.exec("DROP TRIGGER IF EXISTS trg_todos_updated_at");
+    db.exec(`
+      CREATE TABLE todos_new (
+        id           TEXT PRIMARY KEY,
+        title        TEXT NOT NULL,
+        list_id      TEXT NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+        due_date     TEXT,
+        priority     TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('normal','prioritized')),
+        is_completed INTEGER NOT NULL DEFAULT 0 CHECK (is_completed IN (0,1)),
+        completed_at TEXT,
+        notes        TEXT,
+        created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+        updated_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+      )
+    `);
+    db.exec(`
+      INSERT INTO todos_new SELECT
+        id, title, list_id, due_date,
+        CASE WHEN priority IN ('medium','high') THEN 'prioritized' ELSE 'normal' END,
+        is_completed, completed_at, notes, created_at, updated_at
+      FROM todos
+    `);
+    db.exec("DROP TABLE todos");
+    db.exec("ALTER TABLE todos_new RENAME TO todos");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date)");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_todos_is_completed ON todos(is_completed)");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_todos_list_id ON todos(list_id)");
+    db.exec(`
+      CREATE TRIGGER IF NOT EXISTS trg_todos_updated_at AFTER UPDATE ON todos
+        FOR EACH ROW BEGIN
+          UPDATE todos SET updated_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id = OLD.id;
+        END
+    `);
+  }
 }

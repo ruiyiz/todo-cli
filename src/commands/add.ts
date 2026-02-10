@@ -16,8 +16,8 @@ export function registerAddCommand(program: Command): void {
     .option("--notes <notes>", "Additional notes")
     .option(
       "--priority <level>",
-      "Priority: none, low, medium, high",
-      "none"
+      "Priority: normal, prioritized",
+      "normal"
     )
     .description("Add a new todo")
     .action((positionalTitle: string | undefined, cmdOpts: Record<string, unknown>) => {
@@ -47,8 +47,8 @@ export function registerAddCommand(program: Command): void {
       }
 
       const priority = cmdOpts.priority as Priority;
-      if (!["none", "low", "medium", "high"].includes(priority)) {
-        console.error(`Invalid priority: "${priority}". Use none, low, medium, or high.`);
+      if (!["normal", "prioritized"].includes(priority)) {
+        console.error(`Invalid priority: "${priority}". Use normal or prioritized.`);
         process.exit(1);
       }
 

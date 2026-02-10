@@ -1,4 +1,4 @@
-export type Priority = "none" | "low" | "medium" | "high";
+export type Priority = "normal" | "prioritized";
 
 export interface GlobalOptions {
   json?: boolean;

@@ -8,7 +8,7 @@ import type { GlobalOptions } from "../types.ts";
 export function registerTodayCommand(program: Command): void {
   program
     .command("today")
-    .description("Show today's agenda: overdue, due today, upcoming (7 days), and high-priority items")
+    .description("Show today's agenda: overdue, due today, upcoming (7 days), and prioritized items")
     .action(() => {
       const opts = program.opts<GlobalOptions>();
       const today = todayStr();
@@ -29,11 +29,11 @@ export function registerTodayCommand(program: Command): void {
       const upcoming = upcomingRaw.filter((t) => !seenIds.has(t.id));
       for (const t of upcoming) seenIds.add(t.id);
 
-      const highRaw = queryTodos({ priority: "high", isCompleted: false });
-      const high = highRaw.filter((t) => !seenIds.has(t.id));
-      for (const t of high) seenIds.add(t.id);
+      const prioRaw = queryTodos({ priority: "prioritized", isCompleted: false });
+      const prio = prioRaw.filter((t) => !seenIds.has(t.id));
+      for (const t of prio) seenIds.add(t.id);
 
-      const allTodos = [...overdue, ...dueToday, ...upcoming, ...high];
+      const allTodos = [...overdue, ...dueToday, ...upcoming, ...prio];
       saveLastResult(allTodos);
 
       if (opts.json || opts.plain) {
@@ -68,9 +68,9 @@ export function registerTodayCommand(program: Command): void {
         outputMessage("", opts);
       }
 
-      if (high.length > 0) {
-        outputMessage(c().bold(`High priority (${high.length}):`), opts);
-        outputTodos(high, opts, idx);
+      if (prio.length > 0) {
+        outputMessage(c().bold(`Prioritized (${prio.length}):`), opts);
+        outputTodos(prio, opts, idx);
       }
     });
 }

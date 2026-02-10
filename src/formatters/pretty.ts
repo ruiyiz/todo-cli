@@ -4,23 +4,13 @@ import type { TodoWithList } from "../models/todo.ts";
 import type { ListWithCount } from "../models/list.ts";
 
 const PRIORITY_SYMBOLS: Record<string, string> = {
-  high: "!!!",
-  medium: "!!",
-  low: "!",
-  none: "",
+  prioritized: "★",
+  normal: "",
 };
 
 function priorityColor(priority: string, text: string): string {
-  switch (priority) {
-    case "high":
-      return c().red(text);
-    case "medium":
-      return c().yellow(text);
-    case "low":
-      return c().blue(text);
-    default:
-      return text;
-  }
+  if (priority === "prioritized") return c().yellow(text);
+  return text;
 }
 
 const LIST_NAME_MAX = 20;
