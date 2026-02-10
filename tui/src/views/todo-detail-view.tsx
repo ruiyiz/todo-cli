@@ -11,7 +11,7 @@ import {
   updateTodo,
   deleteTodo,
 } from "@core/db/repository.ts";
-import { parseDate, formatDateForDb, todayStr, tomorrowStr } from "@core/utils/date.ts";
+import { parseDate, formatDateForDb } from "@core/utils/date.ts";
 import type { Priority } from "@core/types.ts";
 
 export function TodoDetailView() {
@@ -33,12 +33,6 @@ export function TodoDetailView() {
     } else if (input === "p") {
       const next: Priority = todo.priority === "prioritized" ? "normal" : "prioritized";
       updateTodo(todo.id, { priority: next });
-      dispatch({ type: "REFRESH" });
-    } else if (input === "t") {
-      updateTodo(todo.id, { due_date: todayStr() });
-      dispatch({ type: "REFRESH" });
-    } else if (input === "T") {
-      updateTodo(todo.id, { due_date: tomorrowStr() });
       dispatch({ type: "REFRESH" });
     } else if (input === "s") {
       dispatch({ type: "OPEN_MODAL", modal: "setDue" });

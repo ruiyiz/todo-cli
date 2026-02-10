@@ -7,7 +7,6 @@ export type ModalType =
   | "addList"
   | "renameList"
   | "setDue"
-  | "quickAdd"
   | "help";
 export type ListFilter = "active" | "completed" | "all";
 

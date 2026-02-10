@@ -11,8 +11,9 @@ import {
   updateTodo,
   deleteTodo,
   createTodo,
+  getAllLists,
 } from "@core/db/repository.ts";
-import { parseDate, formatDateForDb, todayStr, tomorrowStr } from "@core/utils/date.ts";
+import { parseDate, formatDateForDb } from "@core/utils/date.ts";
 import type { Priority } from "@core/types.ts";
 import type { TodoWithList } from "@core/models/todo.ts";
 import { randomUUID } from "crypto";
@@ -30,6 +31,9 @@ export function ListDetailView() {
 
   const currentTodo: TodoWithList | undefined = todos[state.cursorIndex];
 
+  const lists = getAllLists();
+  const listOptions = lists.map((l) => ({ value: l.id, label: l.title }));
+
   useInput((input, key) => {
     if (state.modal !== "none") return;
     if (key.escape) return;
@@ -43,7 +47,7 @@ export function ListDetailView() {
     } else if (input === "G") {
       dispatch({ type: "SET_CURSOR", index: clampCursor(todos.length - 1) });
     } else if (key.return && currentTodo) {
-      dispatch({ type: "PUSH_VIEW", view: "todoDetail", todoId: currentTodo.id });
+      dispatch({ type: "OPEN_MODAL", modal: "editTodo" });
     } else if ((input === "x" || input === " ") && currentTodo) {
       if (currentTodo.is_completed) {
         updateTodo(currentTodo.id, { is_completed: 0, completed_at: null });
@@ -57,12 +61,6 @@ export function ListDetailView() {
       dispatch({ type: "REFRESH" });
     } else if (input === "s" && currentTodo) {
       dispatch({ type: "OPEN_MODAL", modal: "setDue" });
-    } else if (input === "t" && currentTodo) {
-      updateTodo(currentTodo.id, { due_date: todayStr() });
-      dispatch({ type: "REFRESH" });
-    } else if (input === "T" && currentTodo) {
-      updateTodo(currentTodo.id, { due_date: tomorrowStr() });
-      dispatch({ type: "REFRESH" });
     } else if (input === "a") {
       dispatch({ type: "OPEN_MODAL", modal: "addTodo" });
     } else if (input === "e" && currentTodo) {
@@ -90,21 +88,24 @@ export function ListDetailView() {
 
   const handleAddTodo = useCallback((values: Record<string, string>) => {
     const title = values.title?.trim();
-    if (title && state.selectedListId) {
-      let dueDate: string | null = null;
-      if (values.due?.trim()) {
-        const parsed = parseDate(values.due.trim());
-        if (parsed) dueDate = formatDateForDb(parsed);
+    if (title) {
+      const listId = values.list || state.selectedListId;
+      if (listId) {
+        let dueDate: string | null = null;
+        if (values.due?.trim()) {
+          const parsed = parseDate(values.due.trim());
+          if (parsed) dueDate = formatDateForDb(parsed);
+        }
+        createTodo({
+          id: randomUUID(),
+          title,
+          list_id: listId,
+          due_date: dueDate,
+          priority: (values.priority as Priority) || "normal",
+          notes: values.notes?.trim() || null,
+        });
+        dispatch({ type: "REFRESH" });
       }
-      createTodo({
-        id: randomUUID(),
-        title,
-        list_id: state.selectedListId,
-        due_date: dueDate,
-        priority: (values.priority as Priority) || "normal",
-        notes: values.notes?.trim() || null,
-      });
-      dispatch({ type: "REFRESH" });
     }
     dispatch({ type: "CLOSE_MODAL" });
   }, [state.selectedListId, dispatch]);
@@ -131,6 +132,9 @@ export function ListDetailView() {
     if (values.notes !== undefined) {
       const notesTrimmed = values.notes.trim();
       updates.notes = notesTrimmed || null;
+    }
+    if (values.list && values.list !== currentTodo.list_id) {
+      updates.list_id = values.list;
     }
 
     if (Object.keys(updates).length > 0) {
@@ -161,10 +165,11 @@ export function ListDetailView() {
 
       {state.modal === "addTodo" && (
         <InputForm
-          title="New Todo"
+          title="Add Todo"
           fields={[
             { name: "title", label: "Title", value: "" },
-            { name: "due", label: "Due date", value: "" },
+            { name: "list", label: "List", value: state.selectedListId ?? "", type: "list", options: listOptions },
+            { name: "due", label: "Due date", value: "", type: "date" },
             { name: "priority", label: "Priority", value: "normal", type: "priority" },
             { name: "notes", label: "Notes", value: "" },
           ]}
@@ -177,7 +182,8 @@ export function ListDetailView() {
           title="Edit Todo"
           fields={[
             { name: "title", label: "Title", value: currentTodo.title },
-            { name: "due", label: "Due date", value: currentTodo.due_date ?? "" },
+            { name: "list", label: "List", value: currentTodo.list_id, type: "list", options: listOptions },
+            { name: "due", label: "Due date", value: currentTodo.due_date ?? "", type: "date" },
             { name: "priority", label: "Priority", value: currentTodo.priority, type: "priority" },
             { name: "notes", label: "Notes", value: currentTodo.notes ?? "" },
           ]}

@@ -6,7 +6,8 @@ interface Field {
   name: string;
   label: string;
   value: string;
-  type?: "text" | "priority";
+  type?: "text" | "priority" | "list" | "date";
+  options?: { value: string; label: string }[];
 }
 
 interface Props {
@@ -17,6 +18,25 @@ interface Props {
 }
 
 const PRIORITIES: Priority[] = ["normal", "prioritized"];
+
+function localDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function shiftDate(value: string, delta: number): string {
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  let d: Date;
+  if (!value || !dateRegex.test(value)) {
+    d = new Date();
+  } else {
+    d = new Date(value + "T00:00:00");
+  }
+  d.setDate(d.getDate() + delta);
+  return localDateStr(d);
+}
 
 export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: Props) {
   const [fields, setFields] = useState(initialFields);
@@ -58,6 +78,29 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
       return;
     }
 
+    if (field.type === "list" && field.options) {
+      if (input === "j" || key.downArrow) {
+        const idx = field.options.findIndex((o) => o.value === field.value);
+        const next = field.options[(idx + 1) % field.options.length];
+        updateField(activeField, next.value);
+      } else if (input === "k" || key.upArrow) {
+        const idx = field.options.findIndex((o) => o.value === field.value);
+        const next = field.options[(idx - 1 + field.options.length) % field.options.length];
+        updateField(activeField, next.value);
+      }
+      return;
+    }
+
+    if (field.type === "date") {
+      if (key.upArrow) {
+        updateField(activeField, shiftDate(field.value, 1));
+        return;
+      } else if (key.downArrow) {
+        updateField(activeField, shiftDate(field.value, -1));
+        return;
+      }
+    }
+
     if (key.backspace || key.delete) {
       updateField(activeField, field.value.slice(0, -1));
       return;
@@ -72,6 +115,23 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
     setFields((prev) => prev.map((f, i) => (i === idx ? { ...f, value } : f)));
   }
 
+  function renderFieldValue(field: Field, isActive: boolean) {
+    if (field.type === "priority") {
+      return (
+        <Text color={field.value === "prioritized" ? "yellow" : undefined}>
+          {field.value}
+        </Text>
+      );
+    }
+    if (field.type === "list" && field.options) {
+      const selected = field.options.find((o) => o.value === field.value);
+      return <Text>{selected?.label ?? field.value}</Text>;
+    }
+    return (
+      <Text>{field.value}<Text dimColor>{isActive ? "█" : ""}</Text></Text>
+    );
+  }
+
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={2} paddingY={1} marginY={1}>
       <Text bold color="cyan">{title}</Text>
@@ -82,13 +142,7 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
             {i === activeField ? "❯ " : "  "}
           </Text>
           <Text dimColor>{field.label}: </Text>
-          {field.type === "priority" ? (
-            <Text color={field.value === "prioritized" ? "yellow" : undefined}>
-              {field.value}
-            </Text>
-          ) : (
-            <Text>{field.value}<Text dimColor>{i === activeField ? "█" : ""}</Text></Text>
-          )}
+          {renderFieldValue(field, i === activeField)}
         </Box>
       ))}
       <Text> </Text>

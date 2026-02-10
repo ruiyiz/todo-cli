@@ -6,8 +6,9 @@ import { TodoRow } from "../components/todo-row.tsx";
 import { SectionHeader } from "../components/section-header.tsx";
 import { ConfirmDialog } from "../components/confirm-dialog.tsx";
 import { InlineInput } from "../components/inline-input.tsx";
+import { InputForm } from "../components/input-form.tsx";
 import { completeTodo, updateTodo, deleteTodo, createTodo, getAllLists } from "@core/db/repository.ts";
-import { parseDate, formatDateForDb, todayStr, tomorrowStr } from "@core/utils/date.ts";
+import { parseDate, formatDateForDb, todayStr } from "@core/utils/date.ts";
 import type { TodoWithList } from "@core/models/todo.ts";
 import type { Priority } from "@core/types.ts";
 import { randomUUID } from "crypto";
@@ -23,6 +24,9 @@ export function TodayView() {
 
   const currentTodo: TodoWithList | undefined = all[state.cursorIndex];
 
+  const lists = getAllLists();
+  const listOptions = lists.map((l) => ({ value: l.id, label: l.title }));
+
   useInput((input, key) => {
     if (state.modal !== "none") return;
 
@@ -35,7 +39,7 @@ export function TodayView() {
     } else if (input === "G") {
       dispatch({ type: "SET_CURSOR", index: clampCursor(all.length - 1) });
     } else if (key.return && currentTodo) {
-      dispatch({ type: "PUSH_VIEW", view: "todoDetail", todoId: currentTodo.id });
+      dispatch({ type: "OPEN_MODAL", modal: "editTodo" });
     } else if ((input === "x" || input === " ") && currentTodo) {
       if (currentTodo.is_completed) {
         updateTodo(currentTodo.id, { is_completed: 0, completed_at: null });
@@ -49,36 +53,36 @@ export function TodayView() {
       dispatch({ type: "REFRESH" });
     } else if (input === "s" && currentTodo) {
       dispatch({ type: "OPEN_MODAL", modal: "setDue" });
-    } else if (input === "t" && currentTodo) {
-      updateTodo(currentTodo.id, { due_date: todayStr() });
-      dispatch({ type: "REFRESH" });
-    } else if (input === "T" && currentTodo) {
-      updateTodo(currentTodo.id, { due_date: tomorrowStr() });
-      dispatch({ type: "REFRESH" });
     } else if (input === "d" && currentTodo) {
       dispatch({ type: "OPEN_MODAL", modal: "confirmDelete" });
     } else if (input === "a") {
-      dispatch({ type: "OPEN_MODAL", modal: "quickAdd" });
+      dispatch({ type: "OPEN_MODAL", modal: "addTodo" });
     }
   });
 
-  const handleQuickAdd = useCallback((value: string) => {
-    const title = value.trim();
+  const handleAddTodo = useCallback((values: Record<string, string>) => {
+    const title = values.title?.trim();
     if (title) {
-      const lists = getAllLists();
-      const listId = lists[0]?.id;
+      const listId = values.list || lists[0]?.id;
       if (listId) {
+        let dueDate: string | null = null;
+        if (values.due?.trim()) {
+          const parsed = parseDate(values.due.trim());
+          if (parsed) dueDate = formatDateForDb(parsed);
+        }
         createTodo({
           id: randomUUID(),
           title,
           list_id: listId,
-          due_date: todayStr(),
+          due_date: dueDate,
+          priority: (values.priority as Priority) || "normal",
+          notes: values.notes?.trim() || null,
         });
         dispatch({ type: "REFRESH" });
       }
     }
     dispatch({ type: "CLOSE_MODAL" });
-  }, [dispatch]);
+  }, [lists, dispatch]);
 
   const handleSetDue = useCallback((value: string) => {
     if (currentTodo) {
@@ -89,6 +93,40 @@ export function TodayView() {
         const parsed = parseDate(trimmed);
         if (parsed) updateTodo(currentTodo.id, { due_date: formatDateForDb(parsed) });
       }
+      dispatch({ type: "REFRESH" });
+    }
+    dispatch({ type: "CLOSE_MODAL" });
+  }, [currentTodo, dispatch]);
+
+  const handleEditTodo = useCallback((values: Record<string, string>) => {
+    if (!currentTodo) return;
+    const updates: Record<string, any> = {};
+    const title = values.title?.trim();
+    if (title && title !== currentTodo.title) updates.title = title;
+
+    if (values.due !== undefined) {
+      const dueTrimmed = values.due.trim();
+      if (dueTrimmed === "" && currentTodo.due_date) {
+        updates.due_date = null;
+      } else if (dueTrimmed) {
+        const parsed = parseDate(dueTrimmed);
+        if (parsed) updates.due_date = formatDateForDb(parsed);
+      }
+    }
+
+    if (values.priority && values.priority !== currentTodo.priority) {
+      updates.priority = values.priority;
+    }
+    if (values.notes !== undefined) {
+      const notesTrimmed = values.notes.trim();
+      updates.notes = notesTrimmed || null;
+    }
+    if (values.list && values.list !== currentTodo.list_id) {
+      updates.list_id = values.list;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      updateTodo(currentTodo.id, updates);
       dispatch({ type: "REFRESH" });
     }
     dispatch({ type: "CLOSE_MODAL" });
@@ -127,10 +165,17 @@ export function TodayView() {
 
   return (
     <Box flexDirection="column" paddingX={1}>
-      {state.modal === "quickAdd" && (
-        <InlineInput
-          label="Quick add (due today)"
-          onSubmit={handleQuickAdd}
+      {state.modal === "addTodo" && (
+        <InputForm
+          title="Add Todo"
+          fields={[
+            { name: "title", label: "Title", value: "" },
+            { name: "list", label: "List", value: lists[0]?.id ?? "", type: "list", options: listOptions },
+            { name: "due", label: "Due date", value: todayStr(), type: "date" },
+            { name: "priority", label: "Priority", value: "normal", type: "priority" },
+            { name: "notes", label: "Notes", value: "" },
+          ]}
+          onSubmit={handleAddTodo}
           onCancel={() => dispatch({ type: "CLOSE_MODAL" })}
         />
       )}
@@ -138,6 +183,20 @@ export function TodayView() {
         <ConfirmDialog
           message={`Delete "${currentTodo.title}"?`}
           onConfirm={handleConfirmDelete}
+          onCancel={() => dispatch({ type: "CLOSE_MODAL" })}
+        />
+      )}
+      {state.modal === "editTodo" && currentTodo && (
+        <InputForm
+          title="Edit Todo"
+          fields={[
+            { name: "title", label: "Title", value: currentTodo.title },
+            { name: "list", label: "List", value: currentTodo.list_id, type: "list", options: listOptions },
+            { name: "due", label: "Due date", value: currentTodo.due_date ?? "", type: "date" },
+            { name: "priority", label: "Priority", value: currentTodo.priority, type: "priority" },
+            { name: "notes", label: "Notes", value: currentTodo.notes ?? "" },
+          ]}
+          onSubmit={handleEditTodo}
           onCancel={() => dispatch({ type: "CLOSE_MODAL" })}
         />
       )}
@@ -149,7 +208,7 @@ export function TodayView() {
           onCancel={() => dispatch({ type: "CLOSE_MODAL" })}
         />
       )}
-      {all.length === 0 && state.modal !== "quickAdd" ? (
+      {all.length === 0 && state.modal !== "addTodo" ? (
         <Box paddingY={1}>
           <Text dimColor>Nothing for today. Press 'a' to add a todo.</Text>
         </Box>
