@@ -7,29 +7,26 @@ import { InlineInput } from "../components/inline-input.tsx";
 import { ConfirmDialog } from "../components/confirm-dialog.tsx";
 import { InputForm } from "../components/input-form.tsx";
 import {
-  completeTodo,
   updateTodo,
   deleteTodo,
 } from "@core/db/repository.ts";
+import { useDeferredToggle } from "../hooks/use-deferred-toggle.ts";
 import { parseDate, formatDateForDb } from "@core/utils/date.ts";
 import type { Priority } from "@core/types.ts";
 
 export function TodoDetailView() {
   const { state, dispatch } = useAppState();
-  const todo = useTodoDetail();
+  const rawTodo = useTodoDetail();
+  const { toggle, applyOverrides } = useDeferredToggle(dispatch);
+  const todo = rawTodo ? applyOverrides([rawTodo])[0] : undefined;
 
   useInput((input, key) => {
     if (state.modal !== "none") return;
     if (key.escape) return;
     if (!todo) return;
 
-    if (input === "x" || input === " ") {
-      if (todo.is_completed) {
-        updateTodo(todo.id, { is_completed: 0, completed_at: null });
-      } else {
-        completeTodo(todo.id);
-      }
-      dispatch({ type: "REFRESH" });
+    if (input === "x") {
+      toggle(todo);
     } else if (input === "p") {
       const next: Priority = todo.priority === "prioritized" ? "normal" : "prioritized";
       updateTodo(todo.id, { priority: next });

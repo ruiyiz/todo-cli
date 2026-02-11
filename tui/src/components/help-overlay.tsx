@@ -37,7 +37,7 @@ const SECTIONS: Section[] = [
     title: "Quick Actions",
     color: "green",
     keys: [
-      ["x / Space", "Toggle complete"],
+      ["x", "Toggle complete"],
       ["p", "Toggle priority (normal / prioritized)"],
       ["t", "Set due date to today"],
       ["T", "Set due date to tomorrow"],

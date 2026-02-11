@@ -7,15 +7,22 @@ import { SectionHeader } from "../components/section-header.tsx";
 import { ConfirmDialog } from "../components/confirm-dialog.tsx";
 import { InlineInput } from "../components/inline-input.tsx";
 import { InputForm } from "../components/input-form.tsx";
-import { completeTodo, updateTodo, deleteTodo, createTodo, getAllLists } from "@core/db/repository.ts";
+import { updateTodo, deleteTodo, createTodo, getAllLists } from "@core/db/repository.ts";
 import { parseDate, formatDateForDb, todayStr } from "@core/utils/date.ts";
 import type { TodoWithList } from "@core/models/todo.ts";
 import type { Priority } from "@core/types.ts";
+import { useDeferredToggle } from "../hooks/use-deferred-toggle.ts";
 import { randomUUID } from "crypto";
 
 export function TodayView() {
   const { state, dispatch } = useAppState();
-  const { overdue, dueToday, upcoming, highPriority, all } = useTodayData();
+  const raw = useTodayData();
+  const { toggle, applyOverrides } = useDeferredToggle(dispatch);
+  const overdue = applyOverrides(raw.overdue);
+  const dueToday = applyOverrides(raw.dueToday);
+  const upcoming = applyOverrides(raw.upcoming);
+  const highPriority = applyOverrides(raw.highPriority);
+  const all = [...overdue, ...dueToday, ...upcoming, ...highPriority];
 
   const clampCursor = useCallback(
     (idx: number) => Math.max(0, Math.min(idx, all.length - 1)),
@@ -46,13 +53,8 @@ export function TodayView() {
       dispatch({ type: "SET_CURSOR", index: clampCursor(all.length - 1) });
     } else if (key.return && currentTodo) {
       dispatch({ type: "OPEN_MODAL", modal: "editTodo" });
-    } else if ((input === "x" || input === " ") && currentTodo) {
-      if (currentTodo.is_completed) {
-        updateTodo(currentTodo.id, { is_completed: 0, completed_at: null });
-      } else {
-        completeTodo(currentTodo.id);
-      }
-      dispatch({ type: "REFRESH" });
+    } else if (input === "x" && currentTodo) {
+      toggle(currentTodo);
     } else if (input === "p" && currentTodo) {
       const next: Priority = currentTodo.priority === "prioritized" ? "normal" : "prioritized";
       updateTodo(currentTodo.id, { priority: next });

@@ -2,12 +2,12 @@ import React, { useCallback, useEffect } from "react";
 import { Box, Text, useInput } from "ink";
 import { useAppState } from "../context.ts";
 import { useListTodos, useListTitle } from "../hooks/use-data.ts";
+import { useDeferredToggle } from "../hooks/use-deferred-toggle.ts";
 import { TodoRow } from "../components/todo-row.tsx";
 import { ConfirmDialog } from "../components/confirm-dialog.tsx";
 import { InputForm } from "../components/input-form.tsx";
 import { InlineInput } from "../components/inline-input.tsx";
 import {
-  completeTodo,
   updateTodo,
   deleteTodo,
   createTodo,
@@ -21,8 +21,10 @@ import { randomUUID } from "crypto";
 
 export function ListDetailView() {
   const { state, dispatch } = useAppState();
-  const todos = useListTodos();
+  const rawTodos = useListTodos();
   const listTitle = useListTitle();
+  const { toggle, applyOverrides } = useDeferredToggle(dispatch);
+  const todos = applyOverrides(rawTodos);
 
   const clampCursor = useCallback(
     (idx: number) => Math.max(0, Math.min(idx, todos.length - 1)),
@@ -54,13 +56,8 @@ export function ListDetailView() {
       dispatch({ type: "SET_CURSOR", index: clampCursor(todos.length - 1) });
     } else if (key.return && currentTodo) {
       dispatch({ type: "OPEN_MODAL", modal: "editTodo" });
-    } else if ((input === "x" || input === " ") && currentTodo) {
-      if (currentTodo.is_completed) {
-        updateTodo(currentTodo.id, { is_completed: 0, completed_at: null });
-      } else {
-        completeTodo(currentTodo.id);
-      }
-      dispatch({ type: "REFRESH" });
+    } else if (input === "x" && currentTodo) {
+      toggle(currentTodo);
     } else if (input === "p" && currentTodo) {
       const next: Priority = currentTodo.priority === "prioritized" ? "normal" : "prioritized";
       updateTodo(currentTodo.id, { priority: next });
