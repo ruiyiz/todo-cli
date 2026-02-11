@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Box, Text, useInput } from "ink";
 import { useAppState } from "../context.ts";
 import { useListTodos, useListTitle } from "../hooks/use-data.ts";
@@ -29,6 +29,12 @@ export function ListDetailView() {
     [todos.length]
   );
 
+  useEffect(() => {
+    if (todos.length > 0 && state.cursorIndex >= todos.length) {
+      dispatch({ type: "SET_CURSOR", index: 0 });
+    }
+  }, [state.cursorIndex, todos.length, dispatch]);
+
   const currentTodo: TodoWithList | undefined = todos[state.cursorIndex];
 
   const lists = getAllLists();
@@ -42,9 +48,9 @@ export function ListDetailView() {
       dispatch({ type: "SET_CURSOR", index: clampCursor(state.cursorIndex + 1) });
     } else if (input === "k" || key.upArrow) {
       dispatch({ type: "SET_CURSOR", index: clampCursor(state.cursorIndex - 1) });
-    } else if (input === "g") {
+    } else if (input === "g" || key.pageUp) {
       dispatch({ type: "SET_CURSOR", index: 0 });
-    } else if (input === "G") {
+    } else if (input === "G" || key.pageDown) {
       dispatch({ type: "SET_CURSOR", index: clampCursor(todos.length - 1) });
     } else if (key.return && currentTodo) {
       dispatch({ type: "OPEN_MODAL", modal: "editTodo" });

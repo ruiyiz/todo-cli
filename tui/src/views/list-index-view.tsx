@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Box, Text, useInput } from "ink";
 import { useAppState } from "../context.ts";
 import { useLists } from "../hooks/use-data.ts";
@@ -18,6 +18,12 @@ export function ListIndexView() {
     [lists.length]
   );
 
+  useEffect(() => {
+    if (lists.length > 0 && state.cursorIndex >= lists.length) {
+      dispatch({ type: "SET_CURSOR", index: 0 });
+    }
+  }, [state.cursorIndex, lists.length, dispatch]);
+
   const currentList = lists[state.cursorIndex];
 
   useInput((input, key) => {
@@ -27,9 +33,9 @@ export function ListIndexView() {
       dispatch({ type: "SET_CURSOR", index: clampCursor(state.cursorIndex + 1) });
     } else if (input === "k" || key.upArrow) {
       dispatch({ type: "SET_CURSOR", index: clampCursor(state.cursorIndex - 1) });
-    } else if (input === "g") {
+    } else if (input === "g" || key.pageUp) {
       dispatch({ type: "SET_CURSOR", index: 0 });
-    } else if (input === "G") {
+    } else if (input === "G" || key.pageDown) {
       dispatch({ type: "SET_CURSOR", index: clampCursor(lists.length - 1) });
     } else if (key.return && currentList) {
       dispatch({ type: "PUSH_VIEW", view: "listDetail", listId: currentList.id });

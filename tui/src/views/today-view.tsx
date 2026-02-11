@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Box, Text, useInput } from "ink";
 import { useAppState } from "../context.ts";
 import { useTodayData } from "../hooks/use-today.ts";
@@ -22,6 +22,12 @@ export function TodayView() {
     [all.length]
   );
 
+  useEffect(() => {
+    if (all.length > 0 && state.cursorIndex >= all.length) {
+      dispatch({ type: "SET_CURSOR", index: 0 });
+    }
+  }, [state.cursorIndex, all.length, dispatch]);
+
   const currentTodo: TodoWithList | undefined = all[state.cursorIndex];
 
   const lists = getAllLists();
@@ -34,9 +40,9 @@ export function TodayView() {
       dispatch({ type: "SET_CURSOR", index: clampCursor(state.cursorIndex + 1) });
     } else if (input === "k" || key.upArrow) {
       dispatch({ type: "SET_CURSOR", index: clampCursor(state.cursorIndex - 1) });
-    } else if (input === "g") {
+    } else if (input === "g" || key.pageUp) {
       dispatch({ type: "SET_CURSOR", index: 0 });
-    } else if (input === "G") {
+    } else if (input === "G" || key.pageDown) {
       dispatch({ type: "SET_CURSOR", index: clampCursor(all.length - 1) });
     } else if (key.return && currentTodo) {
       dispatch({ type: "OPEN_MODAL", modal: "editTodo" });
