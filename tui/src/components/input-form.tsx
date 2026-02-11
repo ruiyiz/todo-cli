@@ -41,6 +41,7 @@ function shiftDate(value: string, delta: number): string {
 export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: Props) {
   const [fields, setFields] = useState(initialFields);
   const [activeField, setActiveField] = useState(0);
+  const [cursorPos, setCursorPos] = useState(initialFields[0]?.value.length ?? 0);
 
   useInput((input, key) => {
     if (key.escape) {
@@ -49,11 +50,19 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
     }
 
     if (key.tab && key.shift) {
-      setActiveField((prev) => (prev - 1 + fields.length) % fields.length);
+      setActiveField((prev) => {
+        const next = (prev - 1 + fields.length) % fields.length;
+        setCursorPos(fields[next].value.length);
+        return next;
+      });
       return;
     }
     if (key.tab) {
-      setActiveField((prev) => (prev + 1) % fields.length);
+      setActiveField((prev) => {
+        const next = (prev + 1) % fields.length;
+        setCursorPos(fields[next].value.length);
+        return next;
+      });
       return;
     }
 
@@ -93,21 +102,38 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
 
     if (field.type === "date") {
       if (key.upArrow) {
-        updateField(activeField, shiftDate(field.value, 1));
+        const newVal = shiftDate(field.value, 1);
+        updateField(activeField, newVal);
+        setCursorPos(newVal.length);
         return;
       } else if (key.downArrow) {
-        updateField(activeField, shiftDate(field.value, -1));
+        const newVal = shiftDate(field.value, -1);
+        updateField(activeField, newVal);
+        setCursorPos(newVal.length);
         return;
       }
     }
 
+    if (key.leftArrow) {
+      setCursorPos((prev) => Math.max(0, prev - 1));
+      return;
+    }
+    if (key.rightArrow) {
+      setCursorPos((prev) => Math.min(field.value.length, prev + 1));
+      return;
+    }
+
     if (key.backspace || key.delete) {
-      updateField(activeField, field.value.slice(0, -1));
+      if (cursorPos > 0) {
+        updateField(activeField, field.value.slice(0, cursorPos - 1) + field.value.slice(cursorPos));
+        setCursorPos((prev) => prev - 1);
+      }
       return;
     }
 
     if (input && !key.ctrl && !key.meta) {
-      updateField(activeField, field.value + input);
+      updateField(activeField, field.value.slice(0, cursorPos) + input + field.value.slice(cursorPos));
+      setCursorPos((prev) => prev + input.length);
     }
   });
 
@@ -127,9 +153,13 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
       const selected = field.options.find((o) => o.value === field.value);
       return <Text>{selected?.label ?? field.value}</Text>;
     }
-    return (
-      <Text>{field.value}<Text dimColor>{isActive ? "█" : ""}</Text></Text>
-    );
+    if (isActive) {
+      const before = field.value.slice(0, cursorPos);
+      const under = field.value[cursorPos] ?? " ";
+      const after = field.value.slice(cursorPos + 1);
+      return <Text>{before}<Text inverse>{under}</Text>{after}</Text>;
+    }
+    return <Text>{field.value}</Text>;
   }
 
   return (
