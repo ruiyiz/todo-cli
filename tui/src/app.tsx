@@ -1,5 +1,5 @@
 import React, { useReducer } from "react";
-import { Box, useApp, useInput } from "ink";
+import { Box, useApp, useInput, useStdout } from "ink";
 import { AppContext } from "./context.ts";
 import { reducer, initialState } from "./state.ts";
 import { Header } from "./components/header.tsx";
@@ -12,6 +12,7 @@ import { TodoDetailView } from "./views/todo-detail-view.tsx";
 
 export function App() {
   const { exit } = useApp();
+  const { stdout } = useStdout();
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useInput((input, key) => {
@@ -53,7 +54,7 @@ export function App() {
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
-      <Box flexDirection="column" minHeight={10}>
+      <Box flexDirection="column" height={stdout.rows}>
         <Header />
         {state.modal === "help" ? (
           <HelpOverlay onClose={() => dispatch({ type: "CLOSE_MODAL" })} />
