@@ -8,7 +8,7 @@ import { ConfirmDialog } from "../components/confirm-dialog.tsx";
 import { InlineInput } from "../components/inline-input.tsx";
 import { InputForm } from "../components/input-form.tsx";
 import { updateTodo, deleteTodo, createTodo, getAllLists } from "@core/db/repository.ts";
-import { parseDate, formatDateForDb, todayStr } from "@core/utils/date.ts";
+import { parseDate, formatDateForDb } from "@core/utils/date.ts";
 import type { TodoWithList } from "@core/models/todo.ts";
 import type { Priority } from "@core/types.ts";
 import { useDeferredToggle } from "../hooks/use-deferred-toggle.ts";
@@ -180,7 +180,7 @@ export function TodayView() {
           fields={[
             { name: "title", label: "Title", value: "" },
             { name: "list", label: "List", value: lists[0]?.id ?? "", type: "list", options: listOptions },
-            { name: "due", label: "Due date", value: todayStr(), type: "date" },
+            { name: "due", label: "Due date", value: "", type: "date" },
             { name: "priority", label: "Priority", value: "normal", type: "priority" },
             { name: "notes", label: "Notes", value: "" },
           ]}

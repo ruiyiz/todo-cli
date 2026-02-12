@@ -5,24 +5,31 @@ export function parseDate(input: string): Date | null {
   return results;
 }
 
+function localDateStr(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export function formatDateForDb(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  return localDateStr(date);
 }
 
 export function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localDateStr(new Date());
 }
 
 export function tomorrowStr(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+  return localDateStr(d);
 }
 
 export function weekEndStr(): string {
   const d = new Date();
   d.setDate(d.getDate() + 7);
-  return d.toISOString().slice(0, 10);
+  return localDateStr(d);
 }
 
 export function formatDateForDisplay(dateStr: string | null): string {
