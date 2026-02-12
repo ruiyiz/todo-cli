@@ -44,11 +44,14 @@ export function InlineInput({ label, initialValue = "", onSubmit, onCancel }: Pr
   });
 
   return (
-    <Box marginY={1} paddingX={1}>
-      <Text color={theme.accent} bold>{label}: </Text>
-      <Text>{value.slice(0, cursorPos)}<Text inverse>{value[cursorPos] ?? " "}</Text>{value.slice(cursorPos + 1)}</Text>
-      <Text>  </Text>
-      <Text dimColor>Enter confirm  Esc cancel</Text>
+    <Box flexDirection="column" borderStyle="single" borderLeft={false} borderRight={false} borderColor={theme.accent} paddingX={1}>
+      <Text bold color={theme.accent}>{label}</Text>
+      <Text> </Text>
+      <Box>
+        <Text>{value.slice(0, cursorPos)}<Text inverse>{value[cursorPos] ?? " "}</Text>{value.slice(cursorPos + 1)}</Text>
+      </Box>
+      <Text> </Text>
+      <Text dimColor>Enter: submit  Esc: cancel</Text>
     </Box>
   );
 }

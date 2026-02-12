@@ -15,9 +15,10 @@ export function ConfirmDialog({ message, onConfirm, onCancel }: Props) {
   });
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={theme.selection} paddingX={2} paddingY={1} marginY={1}>
-      <Text>{message}</Text>
-      <Text dimColor>Press y to confirm, n or Esc to cancel</Text>
+    <Box flexDirection="column" borderStyle="single" borderLeft={false} borderRight={false} borderColor={theme.danger} paddingX={1}>
+      <Text bold color={theme.danger}>{message}</Text>
+      <Text> </Text>
+      <Text dimColor>y: confirm  n/Esc: cancel</Text>
     </Box>
   );
 }
