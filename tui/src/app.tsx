@@ -33,6 +33,10 @@ export function App() {
       dispatch({ type: "SWITCH_TOP_VIEW" });
       return;
     }
+    if (key.escape && state.selectedTodoIds.size > 0) {
+      dispatch({ type: "CLEAR_SELECTION" });
+      return;
+    }
     if (key.escape && state.viewStack.length > 0) {
       dispatch({ type: "POP_VIEW" });
       return;

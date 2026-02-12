@@ -158,7 +158,7 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
       const before = field.value.slice(0, cursorPos);
       const under = field.value[cursorPos] ?? " ";
       const after = field.value.slice(cursorPos + 1);
-      return <Text>{before}<Text inverse>{under}</Text>{after}</Text>;
+      return <Box><Text>{before}</Text><Text inverse>{under}</Text><Text>{after}</Text></Box>;
     }
     return <Text>{field.value}</Text>;
   }

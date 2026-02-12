@@ -41,6 +41,8 @@ export function TodayView() {
   const lists = getAllLists();
   const listOptions = lists.map((l) => ({ value: l.id, label: l.title }));
 
+  const hasSelection = state.selectedTodoIds.size > 0;
+
   useInput((input, key) => {
     if (state.modal !== "none") return;
 
@@ -52,6 +54,16 @@ export function TodayView() {
       dispatch({ type: "SET_CURSOR", index: 0 });
     } else if (input === "G" || key.pageDown) {
       dispatch({ type: "SET_CURSOR", index: clampCursor(all.length - 1) });
+    } else if (input === " " && currentTodo) {
+      dispatch({ type: "TOGGLE_SELECT", todoId: currentTodo.id });
+    } else if (input === "e" && currentTodo) {
+      if (hasSelection) {
+        dispatch({ type: "OPEN_MODAL", modal: "bulkEditTodo" });
+      } else {
+        dispatch({ type: "OPEN_MODAL", modal: "editTodo" });
+      }
+    } else if (hasSelection) {
+      return;
     } else if (key.return && currentTodo) {
       dispatch({ type: "OPEN_MODAL", modal: "editTodo" });
     } else if (input === "x" && currentTodo) {
@@ -141,6 +153,27 @@ export function TodayView() {
     dispatch({ type: "CLOSE_MODAL" });
   }, [currentTodo, dispatch]);
 
+  const handleBulkEditTodo = useCallback((values: Record<string, string>) => {
+    const updates: Record<string, any> = {};
+    if (values.list && values.list !== "") updates.list_id = values.list;
+    if (values.due?.trim()) {
+      const parsed = parseDate(values.due.trim());
+      if (parsed) updates.due_date = formatDateForDb(parsed);
+    }
+    if (values.priority && values.priority !== "") updates.priority = values.priority;
+    if (values.status && values.status !== "") {
+      updates.is_completed = values.status === "completed" ? 1 : 0;
+    }
+    if (Object.keys(updates).length > 0) {
+      for (const id of state.selectedTodoIds) {
+        updateTodo(id, updates);
+      }
+      dispatch({ type: "REFRESH" });
+    }
+    dispatch({ type: "CLEAR_SELECTION" });
+    dispatch({ type: "CLOSE_MODAL" });
+  }, [state.selectedTodoIds, dispatch]);
+
   const handleConfirmDelete = useCallback(() => {
     if (currentTodo) {
       deleteTodo(currentTodo.id);
@@ -209,6 +242,19 @@ export function TodayView() {
           onCancel={() => dispatch({ type: "CLOSE_MODAL" })}
         />
       )}
+      {state.modal === "bulkEditTodo" && (
+        <InputForm
+          title={`Bulk Edit (${state.selectedTodoIds.size} selected)`}
+          fields={[
+            { name: "list", label: "List", value: "", type: "list", options: [{ value: "", label: "(no change)" }, ...listOptions] },
+            { name: "due", label: "Due date", value: "", type: "date" },
+            { name: "priority", label: "Priority", value: "", type: "list", options: [{ value: "", label: "(no change)" }, { value: "normal", label: "normal" }, { value: "prioritized", label: "prioritized" }] },
+            { name: "status", label: "Status", value: "", type: "list", options: [{ value: "", label: "(no change)" }, { value: "active", label: "active" }, { value: "completed", label: "completed" }] },
+          ]}
+          onSubmit={handleBulkEditTodo}
+          onCancel={() => { dispatch({ type: "CLEAR_SELECTION" }); dispatch({ type: "CLOSE_MODAL" }); }}
+        />
+      )}
       {state.modal === "setDue" && currentTodo && (
         <InlineInput
           label="Due date"
@@ -230,6 +276,7 @@ export function TodayView() {
                 key={todo.id}
                 todo={todo}
                 isSelected={section.startIdx + i === state.cursorIndex}
+                isMarked={state.selectedTodoIds.has(todo.id)}
               />
             ))}
           </Box>

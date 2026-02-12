@@ -8,18 +8,19 @@ import { theme } from "../theme.ts";
 interface Props {
   todo: TodoWithList;
   isSelected: boolean;
+  isMarked?: boolean;
 }
 
-export function TodoRow({ todo, isSelected }: Props) {
-  const check = todo.is_completed ? "✓" : "○";
-  const checkColor = todo.is_completed ? theme.success : undefined;
+export function TodoRow({ todo, isSelected, isMarked }: Props) {
   const completed = !!todo.is_completed;
+  const check = completed ? "✓" : isMarked ? "◉" : "○";
+  const checkColor = isMarked ? theme.accent : completed ? theme.success : undefined;
 
   return (
     <Box>
       <Text color={theme.selection}>{isSelected ? "❯" : " "}</Text>
       <Text> </Text>
-      <Text color={checkColor} dimColor={!todo.is_completed}>{check}</Text>
+      <Text color={checkColor} dimColor={!isMarked && !completed}>{check}</Text>
       <Text> </Text>
       <Text dimColor>{todo.list_title.slice(0, 15).padEnd(15)}</Text>
       <Text> </Text>

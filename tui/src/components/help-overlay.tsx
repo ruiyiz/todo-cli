@@ -18,7 +18,7 @@ const SECTIONS: Section[] = [
     color: "magenta",
     keys: [
       ["Ctrl+C", "Quit"],
-      ["Esc", "Back / Close"],
+      ["Esc", "Back / Close / Clear selection"],
       ["Tab", "Switch top-level view"],
       ["?", "Toggle help"],
     ],
@@ -43,6 +43,7 @@ const SECTIONS: Section[] = [
       ["t", "Set due date to today"],
       ["T", "Set due date to tomorrow"],
       ["s", "Set due date (type any date)"],
+      ["Space", "Toggle select for bulk edit"],
     ],
   },
   {
@@ -50,7 +51,7 @@ const SECTIONS: Section[] = [
     color: "yellow",
     keys: [
       ["a", "Add todo / list"],
-      ["e", "Edit todo (full form)"],
+      ["e", "Edit todo / bulk edit selected"],
       ["d", "Delete todo / list"],
       ["r", "Rename list"],
     ],

@@ -3,6 +3,7 @@ export type ModalType =
   | "none"
   | "addTodo"
   | "editTodo"
+  | "bulkEditTodo"
   | "confirmDelete"
   | "addList"
   | "renameList"
@@ -20,6 +21,7 @@ export interface AppState {
   modal: ModalType;
   listFilter: ListFilter;
   refreshKey: number;
+  selectedTodoIds: Set<string>;
 }
 
 export type Action =
@@ -31,7 +33,9 @@ export type Action =
   | { type: "CLOSE_MODAL" }
   | { type: "CYCLE_FILTER" }
   | { type: "REFRESH" }
-  | { type: "SELECT_TODO"; todoId: string };
+  | { type: "SELECT_TODO"; todoId: string }
+  | { type: "TOGGLE_SELECT"; todoId: string }
+  | { type: "CLEAR_SELECTION" };
 
 export const initialState: AppState = {
   view: "today",
@@ -43,6 +47,7 @@ export const initialState: AppState = {
   modal: "none",
   listFilter: "active",
   refreshKey: 0,
+  selectedTodoIds: new Set(),
 };
 
 function cursorKey(view: ViewName, selectedListId: string | null): string {
@@ -58,7 +63,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const next = state.view === "today" ? "listIndex" : "today";
       const key = cursorKey(state.view, state.selectedListId);
       const mem = { ...state.cursorMemory, [key]: state.cursorIndex };
-      return { ...state, view: next as ViewName, viewStack: [], cursorIndex: mem[next] ?? 0, cursorMemory: mem, modal: "none" };
+      return { ...state, view: next as ViewName, viewStack: [], cursorIndex: mem[next] ?? 0, cursorMemory: mem, modal: "none", selectedTodoIds: new Set() };
     }
     case "PUSH_VIEW": {
       const key = cursorKey(state.view, state.selectedListId);
@@ -74,6 +79,7 @@ export function reducer(state: AppState, action: Action): AppState {
         cursorIndex: mem[newKey] ?? 0,
         cursorMemory: mem,
         modal: "none",
+        selectedTodoIds: new Set(),
       };
     }
     case "POP_VIEW": {
@@ -83,7 +89,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const key = cursorKey(state.view, state.selectedListId);
       const mem = { ...state.cursorMemory, [key]: state.cursorIndex };
       const prevKey = cursorKey(prev, state.selectedListId);
-      return { ...state, view: prev, viewStack: stack, cursorIndex: mem[prevKey] ?? 0, cursorMemory: mem, modal: "none" };
+      return { ...state, view: prev, viewStack: stack, cursorIndex: mem[prevKey] ?? 0, cursorMemory: mem, modal: "none", selectedTodoIds: new Set() };
     }
     case "SET_CURSOR":
       return { ...state, cursorIndex: action.index };
@@ -99,6 +105,14 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, refreshKey: state.refreshKey + 1 };
     case "SELECT_TODO":
       return { ...state, selectedTodoId: action.todoId };
+    case "TOGGLE_SELECT": {
+      const next = new Set(state.selectedTodoIds);
+      if (next.has(action.todoId)) next.delete(action.todoId);
+      else next.add(action.todoId);
+      return { ...state, selectedTodoIds: next };
+    }
+    case "CLEAR_SELECTION":
+      return { ...state, selectedTodoIds: new Set() };
     default:
       return state;
   }
