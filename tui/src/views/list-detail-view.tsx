@@ -258,7 +258,7 @@ export function ListDetailView() {
         <Text dimColor>No todos. Press 'a' to add one.</Text>
       ) : (
         todos.map((todo, i) => (
-          <TodoRow key={todo.id} todo={todo} isSelected={i === state.cursorIndex} isMarked={state.selectedTodoIds.has(todo.id)} />
+          <TodoRow key={todo.id} todo={todo} isSelected={i === state.cursorIndex} isMarked={state.selectedTodoIds.has(todo.id)} showList={false} />
         ))
       )}
     </Box>
