@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, Text, useInput } from "ink";
+import { theme } from "../theme.ts";
 
 interface Props {
   message: string;
@@ -14,7 +15,7 @@ export function ConfirmDialog({ message, onConfirm, onCancel }: Props) {
   });
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="yellow" paddingX={2} paddingY={1} marginY={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={theme.selection} paddingX={2} paddingY={1} marginY={1}>
       <Text>{message}</Text>
       <Text dimColor>Press y to confirm, n or Esc to cancel</Text>
     </Box>

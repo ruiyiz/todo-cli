@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import type { ListWithCount } from "@core/models/list.ts";
+import { theme } from "../theme.ts";
 
 interface Props {
   list: ListWithCount;
@@ -11,7 +12,7 @@ export function ListRow({ list, isSelected }: Props) {
   const active = list.todo_count - list.completed_count;
   return (
     <Box>
-      <Text color="yellow">{isSelected ? "❯" : " "}</Text>
+      <Text color={theme.selection}>{isSelected ? "❯" : " "}</Text>
       <Text> </Text>
       <Text dimColor>{String(list.logical_id).padStart(2)}</Text>
       <Text>  </Text>

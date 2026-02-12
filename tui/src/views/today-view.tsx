@@ -13,6 +13,7 @@ import type { TodoWithList } from "@core/models/todo.ts";
 import type { Priority } from "@core/types.ts";
 import { useDeferredToggle } from "../hooks/use-deferred-toggle.ts";
 import { randomUUID } from "crypto";
+import { theme } from "../theme.ts";
 
 export function TodayView() {
   const { state, dispatch } = useAppState();
@@ -155,7 +156,7 @@ export function TodayView() {
   const sections: { label: string; color?: string; todos: TodoWithList[]; startIdx: number }[] = [];
 
   if (overdue.length > 0) {
-    sections.push({ label: "Overdue", color: "red", todos: overdue, startIdx: globalIdx });
+    sections.push({ label: "Overdue", color: theme.danger, todos: overdue, startIdx: globalIdx });
     globalIdx += overdue.length;
   }
   if (dueToday.length > 0) {
@@ -163,16 +164,16 @@ export function TodayView() {
     globalIdx += dueToday.length;
   }
   if (upcoming.length > 0) {
-    sections.push({ label: "Upcoming (7 days)", color: "cyan", todos: upcoming, startIdx: globalIdx });
+    sections.push({ label: "Upcoming (7 days)", color: theme.accent, todos: upcoming, startIdx: globalIdx });
     globalIdx += upcoming.length;
   }
   if (highPriority.length > 0) {
-    sections.push({ label: "Prioritized", color: "yellow", todos: highPriority, startIdx: globalIdx });
+    sections.push({ label: "Prioritized", color: theme.priority, todos: highPriority, startIdx: globalIdx });
     globalIdx += highPriority.length;
   }
 
   return (
-    <Box flexDirection="column" paddingX={1}>
+    <Box flexDirection="column" paddingX={1} gap={1}>
       {state.modal === "addTodo" && (
         <InputForm
           title="Add Todo"

@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, Text, useInput } from "ink";
+import { theme } from "../theme.ts";
 
 interface Props {
   onClose: () => void;
@@ -79,8 +80,8 @@ export function HelpOverlay({ onClose }: Props) {
   });
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={2} paddingY={1}>
-      <Text bold color="cyan">Keyboard Shortcuts</Text>
+    <Box flexDirection="column" borderStyle="round" borderColor={theme.accent} paddingX={2} paddingY={1}>
+      <Text bold color={theme.accent}>Keyboard Shortcuts</Text>
       <Text> </Text>
       {SECTIONS.map((section) => (
         <Box key={section.title} flexDirection="column" marginBottom={1}>
@@ -88,7 +89,7 @@ export function HelpOverlay({ onClose }: Props) {
           {section.keys.map(([k, desc]) => (
             <Box key={k}>
               <Text>  </Text>
-              <Text bold color="yellow">{k.padEnd(16)}</Text>
+              <Text bold color={theme.selection}>{k.padEnd(16)}</Text>
               <Text dimColor>{desc}</Text>
             </Box>
           ))}
@@ -96,9 +97,9 @@ export function HelpOverlay({ onClose }: Props) {
       ))}
       <Text dimColor>Press </Text>
       <Box>
-        <Text bold color="yellow">?</Text>
+        <Text bold color={theme.selection}>?</Text>
         <Text dimColor> or </Text>
-        <Text bold color="yellow">Esc</Text>
+        <Text bold color={theme.selection}>Esc</Text>
         <Text dimColor> to close</Text>
       </Box>
     </Box>

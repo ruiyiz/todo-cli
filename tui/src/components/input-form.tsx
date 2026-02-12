@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import type { Priority } from "@core/types.ts";
+import { theme } from "../theme.ts";
 
 interface Field {
   name: string;
@@ -144,7 +145,7 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
   function renderFieldValue(field: Field, isActive: boolean) {
     if (field.type === "priority") {
       return (
-        <Text color={field.value === "prioritized" ? "yellow" : undefined}>
+        <Text color={field.value === "prioritized" ? theme.priority : undefined}>
           {field.value}
         </Text>
       );
@@ -163,12 +164,12 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
   }
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="cyan" paddingX={2} paddingY={1} marginY={1}>
-      <Text bold color="cyan">{title}</Text>
+    <Box flexDirection="column" borderStyle="single" borderLeft={false} borderRight={false} borderColor={theme.accent} paddingX={1}>
+      <Text bold color={theme.accent}>{title}</Text>
       <Text> </Text>
       {fields.map((field, i) => (
         <Box key={field.name}>
-          <Text color={i === activeField ? "yellow" : undefined}>
+          <Text color={i === activeField ? theme.selection : undefined}>
             {i === activeField ? "❯ " : "  "}
           </Text>
           <Text dimColor>{field.label}: </Text>

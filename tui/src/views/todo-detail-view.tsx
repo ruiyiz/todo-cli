@@ -13,6 +13,7 @@ import {
 import { useDeferredToggle } from "../hooks/use-deferred-toggle.ts";
 import { parseDate, formatDateForDb } from "@core/utils/date.ts";
 import type { Priority } from "@core/types.ts";
+import { theme } from "../theme.ts";
 
 export function TodoDetailView() {
   const { state, dispatch } = useAppState();
@@ -137,7 +138,7 @@ export function TodoDetailView() {
       )}
 
       <Box>
-        <Text color={completed ? "green" : undefined} dimColor={!completed}>{check}</Text>
+        <Text color={completed ? theme.success : undefined} dimColor={!completed}>{check}</Text>
         <Text> </Text>
         {completed ? (
           <Text bold dimColor strikethrough>{todo.title}</Text>
@@ -156,7 +157,7 @@ export function TodoDetailView() {
       <Box>
         <Text dimColor>Priority: </Text>
         {todo.priority === "prioritized" ? (
-          <Text color="yellow">★ prioritized</Text>
+          <Text color={theme.priority}>★ prioritized</Text>
         ) : (
           <Text>normal</Text>
         )}

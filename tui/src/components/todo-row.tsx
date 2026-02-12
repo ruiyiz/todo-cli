@@ -3,6 +3,7 @@ import { Box, Text } from "ink";
 import { PriorityBadge } from "./priority-badge.tsx";
 import { DateLabel } from "./date-label.tsx";
 import type { TodoWithList } from "@core/models/todo.ts";
+import { theme } from "../theme.ts";
 
 interface Props {
   todo: TodoWithList;
@@ -11,12 +12,12 @@ interface Props {
 
 export function TodoRow({ todo, isSelected }: Props) {
   const check = todo.is_completed ? "✓" : "○";
-  const checkColor = todo.is_completed ? "green" : undefined;
+  const checkColor = todo.is_completed ? theme.success : undefined;
   const completed = !!todo.is_completed;
 
   return (
     <Box>
-      <Text color="yellow">{isSelected ? "❯" : " "}</Text>
+      <Text color={theme.selection}>{isSelected ? "❯" : " "}</Text>
       <Text> </Text>
       <Text color={checkColor} dimColor={!todo.is_completed}>{check}</Text>
       <Text> </Text>

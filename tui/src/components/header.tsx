@@ -1,26 +1,24 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { useAppState } from "../context.ts";
-
-const VIEW_LABELS: Record<string, string> = {
-  today: "Today",
-  listIndex: "Lists",
-  listDetail: "List",
-  todoDetail: "Todo",
-};
+import { theme } from "../theme.ts";
 
 export function Header() {
   const { state } = useAppState();
-  const label = VIEW_LABELS[state.view] ?? state.view;
-  const tabs = state.view === "today" || state.view === "listIndex"
-    ? ` [${state.view === "today" ? "Today" : "Lists"}]`
-    : "";
+  const isToday = state.view === "today";
 
   return (
-    <Box borderStyle="round" borderColor="cyan" paddingX={1}>
-      <Text bold color="cyan">todo-tui</Text>
-      <Text>  </Text>
-      <Text dimColor>{label}{tabs}</Text>
+    <Box borderStyle="single" borderLeft={false} borderRight={false} paddingX={1} gap={1} marginBottom={1}>
+      {isToday ? (
+        <Text bold backgroundColor={theme.accent} color={theme.accentFg}> Today </Text>
+      ) : (
+        <Text dimColor> Today </Text>
+      )}
+      {!isToday ? (
+        <Text bold backgroundColor={theme.accent} color={theme.accentFg}> Lists </Text>
+      ) : (
+        <Text dimColor> Lists </Text>
+      )}
     </Box>
   );
 }

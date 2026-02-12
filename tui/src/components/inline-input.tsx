@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
+import { theme } from "../theme.ts";
 
 interface Props {
   label: string;
@@ -44,7 +45,7 @@ export function InlineInput({ label, initialValue = "", onSubmit, onCancel }: Pr
 
   return (
     <Box marginY={1} paddingX={1}>
-      <Text color="cyan" bold>{label}: </Text>
+      <Text color={theme.accent} bold>{label}: </Text>
       <Text>{value.slice(0, cursorPos)}<Text inverse>{value[cursorPos] ?? " "}</Text>{value.slice(cursorPos + 1)}</Text>
       <Text>  </Text>
       <Text dimColor>Enter confirm  Esc cancel</Text>

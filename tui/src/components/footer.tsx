@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { useAppState } from "../context.ts";
+import { theme } from "../theme.ts";
 
 interface Hint {
   key: string;
@@ -37,7 +38,7 @@ export function Footer() {
     <Box borderStyle="single" borderTop={true} borderBottom={false} borderLeft={false} borderRight={false} paddingX={1} flexWrap="wrap">
       {hints.map((hint, i) => (
         <Box key={hint.key + hint.desc} marginRight={1}>
-          <Text bold color="yellow">{hint.key}</Text>
+          <Text bold color={theme.selection}>{hint.key}</Text>
           <Text dimColor> {hint.desc}</Text>
           {i < hints.length - 1 && <Text dimColor> </Text>}
         </Box>
