@@ -53,6 +53,17 @@ export function formatTodosPretty(todos: TodoWithList[], startIndex = 1): string
     let suffixWidth = 0;
     const suffix: string[] = [];
 
+    if (t.notes) {
+      suffix.push(c().dim("📝"));
+      suffixWidth += 1 + 2;
+    }
+
+    const pSym = PRIORITY_SYMBOLS[t.priority];
+    if (pSym) {
+      suffix.push(priorityColor(t.priority, pSym));
+      suffixWidth += 1 + pSym.length;
+    }
+
     if (t.due_date) {
       const display = formatDateForDisplay(t.due_date);
       const dateStr = isOverdue(t.due_date) && !t.is_completed
@@ -60,12 +71,6 @@ export function formatTodosPretty(todos: TodoWithList[], startIndex = 1): string
         : c().cyan(display);
       suffix.push(dateStr);
       suffixWidth += 1 + display.length;
-    }
-
-    const pSym = PRIORITY_SYMBOLS[t.priority];
-    if (pSym) {
-      suffix.push(priorityColor(t.priority, pSym));
-      suffixWidth += 1 + pSym.length;
     }
 
     const available = termWidth - 27 - suffixWidth - 1;

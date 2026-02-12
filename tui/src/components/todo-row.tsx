@@ -25,6 +25,7 @@ export function TodoRow({ todo, isSelected, isMarked, showList = true }: Props) 
   let suffix = 0;
   if (todo.due_date) suffix += 1 + formatDateForDisplay(todo.due_date).length;
   if (todo.priority === "prioritized") suffix += 2;
+  if (todo.notes) suffix += 3;
   const maxTitle = Math.max(4, cols - prefix - suffix);
   const title = todo.title.length > maxTitle
     ? todo.title.slice(0, maxTitle - 1) + "…"
@@ -47,16 +48,22 @@ export function TodoRow({ todo, isSelected, isMarked, showList = true }: Props) 
       ) : (
         <Text bold>{title}</Text>
       )}
-      {todo.due_date && (
+      {todo.notes && (
         <>
           <Text> </Text>
-          <DateLabel dateStr={todo.due_date} isCompleted={completed} />
+          <Text dimColor>📝</Text>
         </>
       )}
       {todo.priority === "prioritized" && (
         <>
           <Text> </Text>
           <PriorityBadge priority={todo.priority} />
+        </>
+      )}
+      {todo.due_date && (
+        <>
+          <Text> </Text>
+          <DateLabel dateStr={todo.due_date} isCompleted={completed} />
         </>
       )}
     </Box>
