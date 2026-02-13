@@ -29,7 +29,7 @@ export function App() {
       dispatch({ type: "OPEN_MODAL", modal: "help" });
       return;
     }
-    if (key.tab && (state.view === "today" || state.view === "listIndex")) {
+    if (key.tab && state.view !== "todoDetail") {
       dispatch({ type: "SWITCH_TOP_VIEW" });
       return;
     }
