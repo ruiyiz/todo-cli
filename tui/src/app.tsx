@@ -5,6 +5,8 @@ import { reducer, initialState } from "./state.ts";
 import { Header } from "./components/header.tsx";
 import { Footer } from "./components/footer.tsx";
 import { HelpOverlay } from "./components/help-overlay.tsx";
+import { SearchOverlay } from "./components/search-overlay.tsx";
+import { getListById } from "@core/db/repository.ts";
 import { TodayView } from "./views/today-view.tsx";
 import { ListIndexView } from "./views/list-index-view.tsx";
 import { ListDetailView } from "./views/list-detail-view.tsx";
@@ -21,12 +23,17 @@ export function App() {
       return;
     }
 
+    if (state.modal === "search") return;
     if (state.modal !== "none") {
       if (key.escape) dispatch({ type: "CLOSE_MODAL" });
       return;
     }
     if (input === "?") {
       dispatch({ type: "OPEN_MODAL", modal: "help" });
+      return;
+    }
+    if (input === "/") {
+      dispatch({ type: "OPEN_MODAL", modal: "search" });
       return;
     }
     if (key.tab && state.view !== "todoDetail") {
@@ -62,6 +69,17 @@ export function App() {
         <Header />
         {state.modal === "help" ? (
           <HelpOverlay onClose={() => dispatch({ type: "CLOSE_MODAL" })} />
+        ) : state.modal === "search" ? (
+          <SearchOverlay
+            listId={state.view === "listDetail" ? state.selectedListId : null}
+            listTitle={state.view === "listDetail" && state.selectedListId ? getListById(state.selectedListId)?.title ?? null : null}
+            onClose={() => dispatch({ type: "CLOSE_MODAL" })}
+            onOpen={(todoId, listId) => {
+              dispatch({ type: "CLOSE_MODAL" });
+              dispatch({ type: "PUSH_VIEW", view: "listDetail", listId });
+              dispatch({ type: "PUSH_VIEW", view: "todoDetail", todoId });
+            }}
+          />
         ) : (
           <Box flexDirection="column" flexGrow={1}>
             {renderView()}

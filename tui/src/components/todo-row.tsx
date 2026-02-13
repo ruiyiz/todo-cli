@@ -11,11 +11,12 @@ interface Props {
   isSelected: boolean;
   isMarked?: boolean;
   showList?: boolean;
+  inset?: number;
 }
 
-export function TodoRow({ todo, isSelected, isMarked, showList = true }: Props) {
+export function TodoRow({ todo, isSelected, isMarked, showList = true, inset = 0 }: Props) {
   const { stdout } = useStdout();
-  const cols = (stdout.columns ?? 80) - 1;
+  const cols = (stdout.columns ?? 80) - 1 - inset;
   const completed = !!todo.is_completed;
   const check = completed ? "✓" : isMarked ? "◉" : "○";
   const checkColor = isMarked ? theme.accent : completed ? theme.success : undefined;

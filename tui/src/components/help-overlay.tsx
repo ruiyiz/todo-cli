@@ -20,6 +20,7 @@ const SECTIONS: Section[] = [
       ["Ctrl+C", "Quit"],
       ["Esc", "Back / Close / Clear selection"],
       ["Tab", "Switch top-level view"],
+      ["/", "Fuzzy search todos"],
       ["?", "Toggle help"],
     ],
   },
@@ -86,7 +87,7 @@ export function HelpOverlay({ onClose }: Props) {
   });
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={theme.accent} paddingX={2} paddingY={1}>
+    <Box flexDirection="column" borderStyle="single" borderColor={theme.accent} paddingX={2} paddingY={1}>
       <Text bold color={theme.accent}>Keyboard Shortcuts</Text>
       <Text> </Text>
       {SECTIONS.map((section) => (

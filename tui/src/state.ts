@@ -8,7 +8,8 @@ export type ModalType =
   | "addList"
   | "renameList"
   | "setDue"
-  | "help";
+  | "help"
+  | "search";
 export type ListFilter = "active" | "completed" | "all";
 export type TodayGroupBy = "date" | "list";
 

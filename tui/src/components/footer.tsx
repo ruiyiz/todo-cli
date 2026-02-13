@@ -13,9 +13,10 @@ function h(key: string, desc: string): Hint {
 }
 
 function getHints(view: string, modal: string, selectionCount: number): Hint[] {
+  if (modal === "search") return [h("^X", "toggle"), h("^P", "priority"), h("^S", "due"), h("^D", "del"), h("Enter", "open"), h("Esc", "close")];
   if (modal !== "none") return [h("Esc", "close"), h("Enter", "submit"), h("Tab", "next field")];
 
-  const sys = [h("^C", "quit"), h("?", "help")];
+  const sys = [h("/", "search"), h("^C", "quit"), h("?", "help")];
   const sel = selectionCount > 0 ? [h("e", `bulk edit (${selectionCount})`), h("Esc", "deselect")] : [];
   const quickActions = [h("x", "toggle"), h("p", "priority"), h("s", "due")];
   switch (view) {
