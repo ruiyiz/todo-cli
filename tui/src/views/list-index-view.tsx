@@ -35,7 +35,7 @@ export function ListIndexView() {
       dispatch({ type: "SET_CURSOR", index: clampCursor(state.cursorIndex - 1) });
     } else if (input === "g" || key.pageUp) {
       dispatch({ type: "SET_CURSOR", index: 0 });
-    } else if (input === "G" || key.pageDown) {
+    } else if (key.pageDown) {
       dispatch({ type: "SET_CURSOR", index: clampCursor(lists.length - 1) });
     } else if (key.return && currentList) {
       dispatch({ type: "PUSH_VIEW", view: "listDetail", listId: currentList.id });

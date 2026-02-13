@@ -29,8 +29,6 @@ const SECTIONS: Section[] = [
     keys: [
       ["j / ↓", "Move cursor down"],
       ["k / ↑", "Move cursor up"],
-      ["g", "Go to top"],
-      ["G", "Go to bottom"],
       ["Enter", "Select / Open"],
     ],
   },
@@ -54,6 +52,13 @@ const SECTIONS: Section[] = [
       ["e", "Edit todo / bulk edit selected"],
       ["d", "Delete todo / list"],
       ["r", "Rename list"],
+    ],
+  },
+  {
+    title: "Today View",
+    color: "cyan",
+    keys: [
+      ["g", "Toggle grouping (date / list)"],
     ],
   },
   {

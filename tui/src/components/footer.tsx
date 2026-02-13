@@ -19,11 +19,11 @@ function getHints(view: string, modal: string, selectionCount: number): Hint[] {
   const sel = selectionCount > 0 ? [h("e", `bulk edit (${selectionCount})`), h("Esc", "deselect")] : [];
   switch (view) {
     case "today":
-      return [h("j/k", "nav"), h("Space", "select"), ...sel, h("Enter", "edit"), h("x", "toggle"), h("p", "priority"), h("s", "due"), h("a", "add"), h("d", "del"), h("Tab", "lists"), ...common];
+      return [h("Space", "select"), ...sel, h("Enter", "edit"), h("x", "toggle"), h("p", "priority"), h("s", "due"), h("a", "add"), h("d", "del"), h("g", "group"), h("Tab", "lists"), ...common];
     case "listIndex":
-      return [h("j/k", "nav"), h("Enter", "open"), h("a", "add"), h("r", "rename"), h("d", "delete"), h("Tab", "today"), ...common];
+      return [h("Enter", "open"), h("a", "add"), h("r", "rename"), h("d", "delete"), h("Tab", "today"), ...common];
     case "listDetail":
-      return [h("j/k", "nav"), h("Space", "select"), ...sel, h("Enter", "edit"), h("x", "toggle"), h("p", "priority"), h("s", "due"), h("a", "add"), h("d", "del"), h("f", "filter"), h("Esc", "back"), ...common];
+      return [h("Space", "select"), ...sel, h("Enter", "edit"), h("x", "toggle"), h("p", "priority"), h("s", "due"), h("a", "add"), h("d", "del"), h("f", "filter"), h("Esc", "back"), ...common];
     case "todoDetail":
       return [h("x", "toggle"), h("p", "priority"), h("s", "due"), h("e", "edit"), h("d", "delete"), h("Esc", "back"), ...common];
     default:

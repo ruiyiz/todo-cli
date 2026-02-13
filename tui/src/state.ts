@@ -10,6 +10,7 @@ export type ModalType =
   | "setDue"
   | "help";
 export type ListFilter = "active" | "completed" | "all";
+export type TodayGroupBy = "date" | "list";
 
 export interface AppState {
   view: ViewName;
@@ -22,6 +23,7 @@ export interface AppState {
   listFilter: ListFilter;
   refreshKey: number;
   selectedTodoIds: Set<string>;
+  todayGroupBy: TodayGroupBy;
 }
 
 export type Action =
@@ -35,7 +37,8 @@ export type Action =
   | { type: "REFRESH" }
   | { type: "SELECT_TODO"; todoId: string }
   | { type: "TOGGLE_SELECT"; todoId: string }
-  | { type: "CLEAR_SELECTION" };
+  | { type: "CLEAR_SELECTION" }
+  | { type: "TOGGLE_TODAY_GROUP" };
 
 export const initialState: AppState = {
   view: "today",
@@ -48,6 +51,7 @@ export const initialState: AppState = {
   listFilter: "active",
   refreshKey: 0,
   selectedTodoIds: new Set(),
+  todayGroupBy: "date",
 };
 
 function cursorKey(view: ViewName, selectedListId: string | null): string {
@@ -113,6 +117,10 @@ export function reducer(state: AppState, action: Action): AppState {
     }
     case "CLEAR_SELECTION":
       return { ...state, selectedTodoIds: new Set() };
+    case "TOGGLE_TODAY_GROUP": {
+      const next: TodayGroupBy = state.todayGroupBy === "date" ? "list" : "date";
+      return { ...state, todayGroupBy: next, cursorIndex: 0 };
+    }
     default:
       return state;
   }

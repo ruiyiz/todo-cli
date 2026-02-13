@@ -50,9 +50,11 @@ export function TodayView() {
       dispatch({ type: "SET_CURSOR", index: clampCursor(state.cursorIndex + 1) });
     } else if (input === "k" || key.upArrow) {
       dispatch({ type: "SET_CURSOR", index: clampCursor(state.cursorIndex - 1) });
-    } else if (input === "g" || key.pageUp) {
+    } else if (input === "g") {
+      dispatch({ type: "TOGGLE_TODAY_GROUP" });
+    } else if (key.pageUp) {
       dispatch({ type: "SET_CURSOR", index: 0 });
-    } else if (input === "G" || key.pageDown) {
+    } else if (key.pageDown) {
       dispatch({ type: "SET_CURSOR", index: clampCursor(all.length - 1) });
     } else if (input === " " && currentTodo) {
       dispatch({ type: "TOGGLE_SELECT", todoId: currentTodo.id });
@@ -188,21 +190,37 @@ export function TodayView() {
   let globalIdx = 0;
   const sections: { label: string; color?: string; todos: TodoWithList[]; startIdx: number }[] = [];
 
-  if (overdue.length > 0) {
-    sections.push({ label: "Overdue", color: theme.danger, todos: overdue, startIdx: globalIdx });
-    globalIdx += overdue.length;
-  }
-  if (dueToday.length > 0) {
-    sections.push({ label: "Due today", todos: dueToday, startIdx: globalIdx });
-    globalIdx += dueToday.length;
-  }
-  if (upcoming.length > 0) {
-    sections.push({ label: "Upcoming (7 days)", color: theme.accent, todos: upcoming, startIdx: globalIdx });
-    globalIdx += upcoming.length;
-  }
-  if (highPriority.length > 0) {
-    sections.push({ label: "Prioritized", color: theme.priority, todos: highPriority, startIdx: globalIdx });
-    globalIdx += highPriority.length;
+  if (state.todayGroupBy === "list") {
+    const byList = new Map<string, { title: string; todos: TodoWithList[] }>();
+    for (const todo of all) {
+      let group = byList.get(todo.list_id);
+      if (!group) {
+        group = { title: todo.list_title, todos: [] };
+        byList.set(todo.list_id, group);
+      }
+      group.todos.push(todo);
+    }
+    for (const [, group] of byList) {
+      sections.push({ label: group.title, color: theme.accent, todos: group.todos, startIdx: globalIdx });
+      globalIdx += group.todos.length;
+    }
+  } else {
+    if (overdue.length > 0) {
+      sections.push({ label: "Overdue", color: theme.danger, todos: overdue, startIdx: globalIdx });
+      globalIdx += overdue.length;
+    }
+    if (dueToday.length > 0) {
+      sections.push({ label: "Due today", todos: dueToday, startIdx: globalIdx });
+      globalIdx += dueToday.length;
+    }
+    if (upcoming.length > 0) {
+      sections.push({ label: "Upcoming (7 days)", color: theme.accent, todos: upcoming, startIdx: globalIdx });
+      globalIdx += upcoming.length;
+    }
+    if (highPriority.length > 0) {
+      sections.push({ label: "Prioritized", color: theme.priority, todos: highPriority, startIdx: globalIdx });
+      globalIdx += highPriority.length;
+    }
   }
 
   return (
@@ -277,6 +295,7 @@ export function TodayView() {
                 todo={todo}
                 isSelected={section.startIdx + i === state.cursorIndex}
                 isMarked={state.selectedTodoIds.has(todo.id)}
+                showList={false}
               />
             ))}
           </Box>

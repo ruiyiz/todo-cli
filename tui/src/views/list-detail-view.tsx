@@ -54,7 +54,7 @@ export function ListDetailView() {
       dispatch({ type: "SET_CURSOR", index: clampCursor(state.cursorIndex - 1) });
     } else if (input === "g" || key.pageUp) {
       dispatch({ type: "SET_CURSOR", index: 0 });
-    } else if (input === "G" || key.pageDown) {
+    } else if (key.pageDown) {
       dispatch({ type: "SET_CURSOR", index: clampCursor(todos.length - 1) });
     } else if (input === " " && currentTodo) {
       dispatch({ type: "TOGGLE_SELECT", todoId: currentTodo.id });
