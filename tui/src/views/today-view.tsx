@@ -43,12 +43,14 @@ export function TodayView() {
     }
     const sortTodos = (todos: TodoWithList[]) =>
       todos.sort((a, b) => {
+        if (a.due_date && b.due_date) {
+          const cmp = a.due_date.localeCompare(b.due_date);
+          if (cmp !== 0) return cmp;
+        } else if (a.due_date) return -1;
+        else if (b.due_date) return 1;
         const pa = a.priority === "prioritized" ? 0 : 1;
         const pb = b.priority === "prioritized" ? 0 : 1;
         if (pa !== pb) return pa - pb;
-        if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
-        if (a.due_date) return -1;
-        if (b.due_date) return 1;
         return 0;
       });
     for (const list of lists) {
