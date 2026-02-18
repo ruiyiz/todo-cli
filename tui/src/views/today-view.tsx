@@ -25,6 +25,59 @@ export function TodayView() {
   const highPriority = applyOverrides(raw.highPriority);
   const all = [...overdue, ...dueToday, ...upcoming, ...highPriority];
 
+  let globalIdx = 0;
+  const sections: { label: string; color?: string; todos: TodoWithList[]; startIdx: number }[] = [];
+
+  const lists = getAllLists();
+  const listOptions = lists.map((l) => ({ value: l.id, label: l.title }));
+
+  if (state.todayGroupBy === "list") {
+    const byList = new Map<string, TodoWithList[]>();
+    for (const todo of all) {
+      let group = byList.get(todo.list_id);
+      if (!group) {
+        group = [];
+        byList.set(todo.list_id, group);
+      }
+      group.push(todo);
+    }
+    const sortTodos = (todos: TodoWithList[]) =>
+      todos.sort((a, b) => {
+        const pa = a.priority === "prioritized" ? 0 : 1;
+        const pb = b.priority === "prioritized" ? 0 : 1;
+        if (pa !== pb) return pa - pb;
+        if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
+        if (a.due_date) return -1;
+        if (b.due_date) return 1;
+        return 0;
+      });
+    for (const list of lists) {
+      const todos = byList.get(list.id);
+      if (!todos) continue;
+      sections.push({ label: list.title, color: theme.accent, todos: sortTodos(todos), startIdx: globalIdx });
+      globalIdx += todos.length;
+    }
+  } else {
+    if (overdue.length > 0) {
+      sections.push({ label: "Overdue", color: theme.danger, todos: overdue, startIdx: globalIdx });
+      globalIdx += overdue.length;
+    }
+    if (dueToday.length > 0) {
+      sections.push({ label: "Due today", todos: dueToday, startIdx: globalIdx });
+      globalIdx += dueToday.length;
+    }
+    if (upcoming.length > 0) {
+      sections.push({ label: "Upcoming (7 days)", color: theme.accent, todos: upcoming, startIdx: globalIdx });
+      globalIdx += upcoming.length;
+    }
+    if (highPriority.length > 0) {
+      sections.push({ label: "Prioritized", color: theme.priority, todos: highPriority, startIdx: globalIdx });
+      globalIdx += highPriority.length;
+    }
+  }
+
+  const flatItems = sections.flatMap((s) => s.todos);
+
   const clampCursor = useCallback(
     (idx: number) => Math.max(0, Math.min(idx, all.length - 1)),
     [all.length]
@@ -36,10 +89,7 @@ export function TodayView() {
     }
   }, [state.cursorIndex, all.length, dispatch]);
 
-  const currentTodo: TodoWithList | undefined = all[state.cursorIndex];
-
-  const lists = getAllLists();
-  const listOptions = lists.map((l) => ({ value: l.id, label: l.title }));
+  const currentTodo: TodoWithList | undefined = flatItems[state.cursorIndex];
 
   const hasSelection = state.selectedTodoIds.size > 0;
 
@@ -186,42 +236,6 @@ export function TodayView() {
       }
     }
   }, [currentTodo, all.length, state.cursorIndex, dispatch]);
-
-  let globalIdx = 0;
-  const sections: { label: string; color?: string; todos: TodoWithList[]; startIdx: number }[] = [];
-
-  if (state.todayGroupBy === "list") {
-    const byList = new Map<string, { title: string; todos: TodoWithList[] }>();
-    for (const todo of all) {
-      let group = byList.get(todo.list_id);
-      if (!group) {
-        group = { title: todo.list_title, todos: [] };
-        byList.set(todo.list_id, group);
-      }
-      group.todos.push(todo);
-    }
-    for (const [, group] of byList) {
-      sections.push({ label: group.title, color: theme.accent, todos: group.todos, startIdx: globalIdx });
-      globalIdx += group.todos.length;
-    }
-  } else {
-    if (overdue.length > 0) {
-      sections.push({ label: "Overdue", color: theme.danger, todos: overdue, startIdx: globalIdx });
-      globalIdx += overdue.length;
-    }
-    if (dueToday.length > 0) {
-      sections.push({ label: "Due today", todos: dueToday, startIdx: globalIdx });
-      globalIdx += dueToday.length;
-    }
-    if (upcoming.length > 0) {
-      sections.push({ label: "Upcoming (7 days)", color: theme.accent, todos: upcoming, startIdx: globalIdx });
-      globalIdx += upcoming.length;
-    }
-    if (highPriority.length > 0) {
-      sections.push({ label: "Prioritized", color: theme.priority, todos: highPriority, startIdx: globalIdx });
-      globalIdx += highPriority.length;
-    }
-  }
 
   return (
     <Box flexDirection="column" paddingX={1} gap={1}>
