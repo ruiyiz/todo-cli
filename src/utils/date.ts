@@ -32,6 +32,19 @@ export function weekEndStr(): string {
   return localDateStr(d);
 }
 
+export function endOfWeekStr(): string {
+  const d = new Date();
+  const daysUntilSunday = d.getDay() === 0 ? 0 : 7 - d.getDay();
+  d.setDate(d.getDate() + daysUntilSunday);
+  return localDateStr(d);
+}
+
+export function plus10DaysStr(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 10);
+  return localDateStr(d);
+}
+
 export function formatDateForDisplay(dateStr: string | null): string {
   if (!dateStr) return "";
   const date = new Date(dateStr + "T00:00:00");
