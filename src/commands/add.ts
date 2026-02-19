@@ -58,7 +58,7 @@ export function registerAddCommand(program: Command): void {
         list_id: list.id,
         due_date: dueDate,
         priority,
-        notes: (cmdOpts.notes as string) ?? null,
+        notes: (cmdOpts.notes as string)?.replace(/\\n/g, "\n") ?? null,
       });
 
       const fmt = getFormat(opts);

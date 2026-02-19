@@ -123,7 +123,7 @@ export function TodoDetailView() {
             { name: "title", label: "Title", value: todo.title },
             { name: "due", label: "Due date", value: todo.due_date ?? "" },
             { name: "priority", label: "Priority", value: todo.priority, type: "priority" },
-            { name: "notes", label: "Notes", value: todo.notes ?? "" },
+            { name: "notes", label: "Notes", value: todo.notes ?? "", type: "multiline" },
           ]}
           onSubmit={handleEditTodo}
           onCancel={() => dispatch({ type: "CLOSE_MODAL" })}

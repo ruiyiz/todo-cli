@@ -7,7 +7,7 @@ interface Field {
   name: string;
   label: string;
   value: string;
-  type?: "text" | "priority" | "list" | "date";
+  type?: "text" | "priority" | "list" | "date" | "multiline";
   options?: { value: string; label: string }[];
 }
 
@@ -45,10 +45,28 @@ function shiftDate(value: string, delta: number): string {
   return localDateStr(d);
 }
 
+function getLineCol(value: string, cursorPos: number): { line: number; col: number } {
+  const before = value.slice(0, cursorPos);
+  const lines = before.split("\n");
+  return { line: lines.length - 1, col: lines[lines.length - 1].length };
+}
+
+function posFromLineCol(value: string, line: number, col: number): number {
+  const lines = value.split("\n");
+  let pos = 0;
+  for (let i = 0; i < line && i < lines.length; i++) {
+    pos += lines[i].length + 1;
+  }
+  const targetLine = lines[Math.min(line, lines.length - 1)];
+  return pos + Math.min(col, targetLine.length);
+}
+
 export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: Props) {
   const [fields, setFields] = useState(initialFields);
   const [activeField, setActiveField] = useState(0);
   const [cursorPos, setCursorPos] = useState(initialFields[0]?.value.length ?? 0);
+
+  const isMultiline = fields[activeField]?.type === "multiline";
 
   useInput((input, key) => {
     if (key.escape) {
@@ -73,10 +91,24 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
       return;
     }
 
-    if (key.return) {
+    // Ctrl+S: universal submit
+    if (key.ctrl && input === "s") {
       const values: Record<string, string> = {};
       for (const f of fields) values[f.name] = f.value;
       onSubmit(values);
+      return;
+    }
+
+    if (key.return) {
+      if (isMultiline) {
+        const field = fields[activeField];
+        updateField(activeField, field.value.slice(0, cursorPos) + "\n" + field.value.slice(cursorPos));
+        setCursorPos((prev) => prev + 1);
+      } else {
+        const values: Record<string, string> = {};
+        for (const f of fields) values[f.name] = f.value;
+        onSubmit(values);
+      }
       return;
     }
 
@@ -121,6 +153,18 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
       }
     }
 
+    // Multiline Up/Down navigation
+    if (isMultiline && (key.upArrow || key.downArrow)) {
+      const { line, col } = getLineCol(field.value, cursorPos);
+      const lines = field.value.split("\n");
+      if (key.upArrow && line > 0) {
+        setCursorPos(posFromLineCol(field.value, line - 1, col));
+      } else if (key.downArrow && line < lines.length - 1) {
+        setCursorPos(posFromLineCol(field.value, line + 1, col));
+      }
+      return;
+    }
+
     if (key.leftArrow) {
       setCursorPos((prev) => Math.max(0, prev - 1));
       return;
@@ -146,6 +190,33 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
 
   function updateField(idx: number, value: string) {
     setFields((prev) => prev.map((f, i) => (i === idx ? { ...f, value } : f)));
+  }
+
+  function renderMultilineValue(field: Field, isActive: boolean) {
+    const lines = field.value.split("\n");
+    if (isActive) {
+      const { line: curLine, col: curCol } = getLineCol(field.value, cursorPos);
+      return (
+        <Box flexDirection="column">
+          {lines.map((lineText, li) => {
+            if (li === curLine) {
+              const before = lineText.slice(0, curCol);
+              const under = lineText[curCol] ?? " ";
+              const after = lineText.slice(curCol + 1);
+              return <Text key={li}>{before}<Text inverse>{under}</Text>{after}</Text>;
+            }
+            return <Text key={li}>{lineText || " "}</Text>;
+          })}
+        </Box>
+      );
+    }
+    return (
+      <Box flexDirection="column">
+        {lines.map((lineText, li) => (
+          <Text key={li}>{lineText || " "}</Text>
+        ))}
+      </Box>
+    );
   }
 
   function renderFieldValue(field: Field, isActive: boolean) {
@@ -175,6 +246,9 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
       }
       return <Box><Text>{field.value}</Text>{weekday && <Text color={theme.accent}>{"  "}[{weekday}]</Text>}</Box>;
     }
+    if (field.type === "multiline") {
+      return renderMultilineValue(field, isActive);
+    }
     if (isActive) {
       const before = field.value.slice(0, cursorPos);
       const under = field.value[cursorPos] ?? " ";
@@ -184,21 +258,43 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
     return <Text>{field.value}</Text>;
   }
 
+  const helpText = isMultiline
+    ? "Tab: next field  Ctrl+S: submit  Esc: cancel"
+    : "Tab/Shift+Tab: fields  Enter: submit  Esc: cancel";
+
   return (
     <Box flexDirection="column" borderStyle="single" borderLeft={false} borderRight={false} borderColor={theme.accent} paddingX={1}>
       <Text bold color={theme.accent}>{title}</Text>
       <Text> </Text>
-      {fields.map((field, i) => (
-        <Box key={field.name}>
-          <Text color={i === activeField ? theme.selection : undefined}>
-            {i === activeField ? "❯ " : "  "}
-          </Text>
-          <Text dimColor>{field.label}: </Text>
-          {renderFieldValue(field, i === activeField)}
-        </Box>
-      ))}
+      {fields.map((field, i) => {
+        const isActive = i === activeField;
+        if (field.type === "multiline") {
+          return (
+            <Box key={field.name} flexDirection="column">
+              <Box>
+                <Text color={isActive ? theme.selection : undefined}>
+                  {isActive ? "❯ " : "  "}
+                </Text>
+                <Text dimColor>{field.label}:</Text>
+              </Box>
+              <Box marginLeft={4}>
+                {renderFieldValue(field, isActive)}
+              </Box>
+            </Box>
+          );
+        }
+        return (
+          <Box key={field.name}>
+            <Text color={isActive ? theme.selection : undefined}>
+              {isActive ? "❯ " : "  "}
+            </Text>
+            <Text dimColor>{field.label}: </Text>
+            {renderFieldValue(field, isActive)}
+          </Box>
+        );
+      })}
       <Text> </Text>
-      <Text dimColor>Tab/Shift+Tab: fields  Enter: submit  Esc: cancel</Text>
+      <Text dimColor>{helpText}</Text>
     </Box>
   );
 }

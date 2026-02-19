@@ -57,7 +57,7 @@ export function registerEditCommand(program: Command): void {
         updates.due_date = null;
       }
 
-      if (cmdOpts.notes !== undefined) updates.notes = cmdOpts.notes;
+      if (cmdOpts.notes !== undefined) updates.notes = (cmdOpts.notes as string).replace(/\\n/g, "\n");
 
       if (cmdOpts.priority) {
         const p = cmdOpts.priority as Priority;

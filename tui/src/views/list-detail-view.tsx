@@ -209,7 +209,7 @@ export function ListDetailView() {
             { name: "list", label: "List", value: state.selectedListId ?? "", type: "list", options: listOptions },
             { name: "due", label: "Due date", value: "", type: "date" },
             { name: "priority", label: "Priority", value: "normal", type: "priority" },
-            { name: "notes", label: "Notes", value: "" },
+            { name: "notes", label: "Notes", value: "", type: "multiline" },
           ]}
           onSubmit={handleAddTodo}
           onCancel={() => dispatch({ type: "CLOSE_MODAL" })}
@@ -223,7 +223,7 @@ export function ListDetailView() {
             { name: "list", label: "List", value: currentTodo.list_id, type: "list", options: listOptions },
             { name: "due", label: "Due date", value: currentTodo.due_date ?? "", type: "date" },
             { name: "priority", label: "Priority", value: currentTodo.priority, type: "priority" },
-            { name: "notes", label: "Notes", value: currentTodo.notes ?? "" },
+            { name: "notes", label: "Notes", value: currentTodo.notes ?? "", type: "multiline" },
           ]}
           onSubmit={handleEditTodo}
           onCancel={() => dispatch({ type: "CLOSE_MODAL" })}
