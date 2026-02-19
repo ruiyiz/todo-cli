@@ -237,8 +237,8 @@ export function queryTodos(options: TodoQueryOptions): TodoWithList[] {
        ${where}
        ORDER BY
          t.is_completed ASC,
-         t.due_date ASC NULLS LAST,
          CASE t.priority WHEN 'prioritized' THEN 0 ELSE 1 END,
+         t.due_date ASC NULLS LAST,
          l.logical_id ASC,
          t.title ASC`
     )
@@ -253,7 +253,7 @@ export function getTodosByListTitle(listTitle: string): TodoWithList[] {
        FROM todos t
        JOIN lists l ON t.list_id = l.id
        WHERE l.title = ?
-       ORDER BY t.is_completed ASC, t.due_date ASC NULLS LAST, CASE t.priority WHEN 'prioritized' THEN 0 ELSE 1 END, t.created_at ASC`
+       ORDER BY t.is_completed ASC, CASE t.priority WHEN 'prioritized' THEN 0 ELSE 1 END, t.due_date ASC NULLS LAST, t.created_at ASC`
     )
     .all(listTitle);
 }
