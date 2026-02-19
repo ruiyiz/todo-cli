@@ -219,7 +219,11 @@ export function TodayView() {
     }
     if (values.priority && values.priority !== "") updates.priority = values.priority;
     if (values.status && values.status !== "") {
-      updates.is_completed = values.status === "completed" ? 1 : 0;
+      const completing = values.status === "completed";
+      updates.is_completed = completing ? 1 : 0;
+      updates.completed_at = completing
+        ? new Date().toISOString().replace(/\.\d{3}Z$/, "Z")
+        : null;
     }
     if (Object.keys(updates).length > 0) {
       for (const id of state.selectedTodoIds) {

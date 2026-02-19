@@ -68,10 +68,12 @@ export function reassignListId(listUuid: string, newLogicalId: number): void {
 
   const occupying = db.query<List, [number]>("SELECT * FROM lists WHERE logical_id = ?").get(newLogicalId);
   if (occupying) {
-    // Swap: move occupying list to a temp value, assign target, then fix occupying
-    db.run("UPDATE lists SET logical_id = -1 WHERE id = ?", [occupying.id]);
-    db.run("UPDATE lists SET logical_id = ? WHERE id = ?", [newLogicalId, listUuid]);
-    db.run("UPDATE lists SET logical_id = ? WHERE id = ?", [current.logical_id, occupying.id]);
+    const swap = db.transaction(() => {
+      db.run("UPDATE lists SET logical_id = -1 WHERE id = ?", [occupying.id]);
+      db.run("UPDATE lists SET logical_id = ? WHERE id = ?", [newLogicalId, listUuid]);
+      db.run("UPDATE lists SET logical_id = ? WHERE id = ?", [current.logical_id, occupying.id]);
+    });
+    swap();
   } else {
     db.run("UPDATE lists SET logical_id = ? WHERE id = ?", [newLogicalId, listUuid]);
   }

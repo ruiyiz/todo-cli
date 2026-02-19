@@ -19,10 +19,8 @@ function shiftDate(value: string, delta: number): string {
     return localDateStr(today);
   }
   const d = new Date(value + "T00:00:00");
-  if (d < today) {
-    return localDateStr(today);
-  }
   d.setDate(d.getDate() + delta);
+  if (d < today) return localDateStr(today);
   return localDateStr(d);
 }
 

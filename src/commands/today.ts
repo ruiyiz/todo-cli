@@ -1,7 +1,7 @@
 import type { Command } from "commander";
 import { queryTodos, saveLastResult } from "../db/repository.ts";
 import { outputTodos, outputMessage } from "../formatters/index.ts";
-import { todayStr, weekEndStr } from "../utils/date.ts";
+import { todayStr, tomorrowStr, weekEndStr } from "../utils/date.ts";
 import { c } from "../utils/color.ts";
 import type { GlobalOptions } from "../types.ts";
 
@@ -21,11 +21,7 @@ export function registerTodayCommand(program: Command): void {
       for (const t of overdue) seenIds.add(t.id);
       for (const t of dueToday) seenIds.add(t.id);
 
-      const tomorrowDate = new Date();
-      tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-      const tomorrowStr = tomorrowDate.toISOString().slice(0, 10);
-
-      const upcomingRaw = queryTodos({ dueDateFrom: tomorrowStr, dueDateTo: weekEnd, isCompleted: false });
+      const upcomingRaw = queryTodos({ dueDateFrom: tomorrowStr(), dueDateTo: weekEnd, isCompleted: false });
       const upcoming = upcomingRaw.filter((t) => !seenIds.has(t.id));
       for (const t of upcoming) seenIds.add(t.id);
 
