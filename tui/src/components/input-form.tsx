@@ -27,13 +27,21 @@ function localDateStr(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+function getWeekday(value: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "";
+  return new Date(value + "T00:00:00").toLocaleDateString("en-US", { weekday: "short" });
+}
+
 function shiftDate(value: string, delta: number): string {
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  let d: Date;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   if (!value || !dateRegex.test(value)) {
-    d = new Date();
-  } else {
-    d = new Date(value + "T00:00:00");
+    return localDateStr(today);
+  }
+  const d = new Date(value + "T00:00:00");
+  if (d < today) {
+    return localDateStr(today);
   }
   d.setDate(d.getDate() + delta);
   return localDateStr(d);
@@ -153,6 +161,21 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
     if (field.type === "list" && field.options) {
       const selected = field.options.find((o) => o.value === field.value);
       return <Text>{selected?.label ?? field.value}</Text>;
+    }
+    if (field.type === "date") {
+      const weekday = getWeekday(field.value);
+      if (isActive) {
+        const before = field.value.slice(0, cursorPos);
+        const under = field.value[cursorPos] ?? " ";
+        const after = field.value.slice(cursorPos + 1);
+        return (
+          <Box>
+            <Box><Text>{before}</Text><Text inverse>{under}</Text><Text>{after}</Text></Box>
+            {weekday && <Text color={theme.accent}>{"  "}[{weekday}]</Text>}
+          </Box>
+        );
+      }
+      return <Box><Text>{field.value}</Text>{weekday && <Text color={theme.accent}>{"  "}[{weekday}]</Text>}</Box>;
     }
     if (isActive) {
       const before = field.value.slice(0, cursorPos);

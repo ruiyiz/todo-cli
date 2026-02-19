@@ -2,6 +2,30 @@ import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { theme } from "../theme.ts";
 
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getWeekday(value: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "";
+  return new Date(value + "T00:00:00").toLocaleDateString("en-US", { weekday: "short" });
+}
+
+function shiftDate(value: string, delta: number): string {
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (!value || !dateRegex.test(value)) {
+    return localDateStr(today);
+  }
+  const d = new Date(value + "T00:00:00");
+  if (d < today) {
+    return localDateStr(today);
+  }
+  d.setDate(d.getDate() + delta);
+  return localDateStr(d);
+}
+
 interface Props {
   label: string;
   initialValue?: string;
@@ -20,6 +44,18 @@ export function InlineInput({ label, initialValue = "", onSubmit, onCancel }: Pr
     }
     if (key.return) {
       onSubmit(value);
+      return;
+    }
+    if (key.upArrow) {
+      const newVal = shiftDate(value, 1);
+      setValue(newVal);
+      setCursorPos(newVal.length);
+      return;
+    }
+    if (key.downArrow) {
+      const newVal = shiftDate(value, -1);
+      setValue(newVal);
+      setCursorPos(newVal.length);
       return;
     }
     if (key.leftArrow) {
@@ -49,9 +85,10 @@ export function InlineInput({ label, initialValue = "", onSubmit, onCancel }: Pr
       <Text> </Text>
       <Box>
         <Text>{value.slice(0, cursorPos)}<Text inverse>{value[cursorPos] ?? " "}</Text>{value.slice(cursorPos + 1)}</Text>
+        {getWeekday(value) && <Text color={theme.accent}>{"  "}[{getWeekday(value)}]</Text>}
       </Box>
       <Text> </Text>
-      <Text dimColor>Enter: submit  Esc: cancel</Text>
+      <Text dimColor>↑/↓: adjust date  Enter: submit  Esc: cancel</Text>
     </Box>
   );
 }
