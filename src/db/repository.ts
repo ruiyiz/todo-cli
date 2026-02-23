@@ -8,7 +8,7 @@ import type { Priority } from "../types.ts";
 export function getAllLists(): ListWithCount[] {
   const db = getDb();
   return db
-    .query<ListWithCount, []>(
+    .prepare(
       `SELECT l.*,
               COUNT(t.id) as todo_count,
               SUM(CASE WHEN t.is_completed = 1 THEN 1 ELSE 0 END) as completed_count
@@ -17,35 +17,35 @@ export function getAllLists(): ListWithCount[] {
        GROUP BY l.id
        ORDER BY l.logical_id`
     )
-    .all();
+    .all() as ListWithCount[];
 }
 
 export function getListByTitle(title: string): List | null {
   const db = getDb();
-  return db.query<List, [string]>("SELECT * FROM lists WHERE title = ?").get(title);
+  return (db.prepare("SELECT * FROM lists WHERE title = ?").get(title) as List | undefined) ?? null;
 }
 
 export function getListById(id: string): List | null {
   const db = getDb();
-  return db.query<List, [string]>("SELECT * FROM lists WHERE id = ?").get(id);
+  return (db.prepare("SELECT * FROM lists WHERE id = ?").get(id) as List | undefined) ?? null;
 }
 
 export function createList(id: string, title: string): List {
   const db = getDb();
-  const maxRow = db.query<{ m: number | null }, []>("SELECT MAX(logical_id) as m FROM lists").get();
+  const maxRow = (db.prepare("SELECT MAX(logical_id) as m FROM lists").get() as { m: number | null } | undefined) ?? null;
   const nextId = (maxRow?.m ?? 0) + 1;
-  db.run("INSERT INTO lists (id, logical_id, title) VALUES (?, ?, ?)", [id, nextId, title]);
+  db.prepare("INSERT INTO lists (id, logical_id, title) VALUES (?, ?, ?)").run(id, nextId, title);
   return getListById(id)!;
 }
 
 export function renameList(id: string, newTitle: string): void {
   const db = getDb();
-  db.run("UPDATE lists SET title = ? WHERE id = ?", [newTitle, id]);
+  db.prepare("UPDATE lists SET title = ? WHERE id = ?").run(newTitle, id);
 }
 
 export function deleteList(id: string): void {
   const db = getDb();
-  db.run("DELETE FROM lists WHERE id = ?", [id]);
+  db.prepare("DELETE FROM lists WHERE id = ?").run(id);
 }
 
 export function resolveList(input: string): List | null {
@@ -53,7 +53,7 @@ export function resolveList(input: string): List | null {
   const num = parseInt(input, 10);
   if (!isNaN(num) && String(num) === input) {
     const db = getDb();
-    const row = db.query<List, [number]>("SELECT * FROM lists WHERE logical_id = ?").get(num);
+    const row = (db.prepare("SELECT * FROM lists WHERE logical_id = ?").get(num) as List | undefined) ?? null;
     if (row) return row;
   }
   // Try by title, then by UUID
@@ -62,20 +62,20 @@ export function resolveList(input: string): List | null {
 
 export function reassignListId(listUuid: string, newLogicalId: number): void {
   const db = getDb();
-  const current = db.query<List, [string]>("SELECT * FROM lists WHERE id = ?").get(listUuid);
+  const current = (db.prepare("SELECT * FROM lists WHERE id = ?").get(listUuid) as List | undefined) ?? null;
   if (!current) throw new Error("List not found");
   if (current.logical_id === newLogicalId) return;
 
-  const occupying = db.query<List, [number]>("SELECT * FROM lists WHERE logical_id = ?").get(newLogicalId);
+  const occupying = (db.prepare("SELECT * FROM lists WHERE logical_id = ?").get(newLogicalId) as List | undefined) ?? null;
   if (occupying) {
     const swap = db.transaction(() => {
-      db.run("UPDATE lists SET logical_id = -1 WHERE id = ?", [occupying.id]);
-      db.run("UPDATE lists SET logical_id = ? WHERE id = ?", [newLogicalId, listUuid]);
-      db.run("UPDATE lists SET logical_id = ? WHERE id = ?", [current.logical_id, occupying.id]);
+      db.prepare("UPDATE lists SET logical_id = -1 WHERE id = ?").run(occupying.id);
+      db.prepare("UPDATE lists SET logical_id = ? WHERE id = ?").run(newLogicalId, listUuid);
+      db.prepare("UPDATE lists SET logical_id = ? WHERE id = ?").run(current.logical_id, occupying.id);
     });
     swap();
   } else {
-    db.run("UPDATE lists SET logical_id = ? WHERE id = ?", [newLogicalId, listUuid]);
+    db.prepare("UPDATE lists SET logical_id = ? WHERE id = ?").run(newLogicalId, listUuid);
   }
 }
 
@@ -83,11 +83,13 @@ export function reassignListId(listUuid: string, newLogicalId: number): void {
 
 export function getTodoById(id: string): TodoWithList | null {
   const db = getDb();
-  return db
-    .query<TodoWithList, [string]>(
-      `SELECT t.*, l.title as list_title FROM todos t JOIN lists l ON t.list_id = l.id WHERE t.id = ?`
-    )
-    .get(id);
+  return (
+    (db
+      .prepare(
+        `SELECT t.*, l.title as list_title FROM todos t JOIN lists l ON t.list_id = l.id WHERE t.id = ?`
+      )
+      .get(id) as TodoWithList | undefined) ?? null
+  );
 }
 
 export function createTodo(todo: {
@@ -99,16 +101,15 @@ export function createTodo(todo: {
   notes?: string | null;
 }): TodoWithList {
   const db = getDb();
-  db.run(
-    `INSERT INTO todos (id, title, list_id, due_date, priority, notes) VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      todo.id,
-      todo.title,
-      todo.list_id,
-      todo.due_date ?? null,
-      todo.priority ?? "normal",
-      todo.notes ?? null,
-    ]
+  db.prepare(
+    `INSERT INTO todos (id, title, list_id, due_date, priority, notes) VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(
+    todo.id,
+    todo.title,
+    todo.list_id,
+    todo.due_date ?? null,
+    todo.priority ?? "normal",
+    todo.notes ?? null
   );
   return getTodoById(todo.id)!;
 }
@@ -160,7 +161,7 @@ export function updateTodo(
 
   if (setClauses.length > 0) {
     values.push(id);
-    db.run(`UPDATE todos SET ${setClauses.join(", ")} WHERE id = ?`, values);
+    db.prepare(`UPDATE todos SET ${setClauses.join(", ")} WHERE id = ?`).run(...(values as any[]));
   }
 
   return getTodoById(id)!;
@@ -168,15 +169,14 @@ export function updateTodo(
 
 export function deleteTodo(id: string): void {
   const db = getDb();
-  db.run("DELETE FROM todos WHERE id = ?", [id]);
+  db.prepare("DELETE FROM todos WHERE id = ?").run(id);
 }
 
 export function completeTodo(id: string): void {
   const db = getDb();
-  db.run(
-    `UPDATE todos SET is_completed = 1, completed_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id = ?`,
-    [id]
-  );
+  db.prepare(
+    `UPDATE todos SET is_completed = 1, completed_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id = ?`
+  ).run(id);
 }
 
 export interface TodoQueryOptions {
@@ -232,7 +232,7 @@ export function queryTodos(options: TodoQueryOptions): TodoWithList[] {
   const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   return db
-    .query<TodoWithList, (string | number)[]>(
+    .prepare(
       `SELECT t.*, l.title as list_title
        FROM todos t
        JOIN lists l ON t.list_id = l.id
@@ -244,27 +244,27 @@ export function queryTodos(options: TodoQueryOptions): TodoWithList[] {
          l.logical_id ASC,
          t.title ASC`
     )
-    .all(...values);
+    .all(...(values as any[])) as TodoWithList[];
 }
 
 export function getTodosByListTitle(listTitle: string): TodoWithList[] {
   const db = getDb();
   return db
-    .query<TodoWithList, [string]>(
+    .prepare(
       `SELECT t.*, l.title as list_title
        FROM todos t
        JOIN lists l ON t.list_id = l.id
        WHERE l.title = ?
        ORDER BY t.is_completed ASC, CASE t.priority WHEN 'prioritized' THEN 0 ELSE 1 END, t.due_date ASC NULLS LAST, t.created_at ASC`
     )
-    .all(listTitle);
+    .all(listTitle) as TodoWithList[];
 }
 
 // ── Last Result (index mapping) ──
 
 export function saveLastResult(todos: TodoWithList[]): void {
   const db = getDb();
-  db.run("DELETE FROM _last_result");
+  db.prepare("DELETE FROM _last_result").run();
   const stmt = db.prepare("INSERT INTO _last_result (idx, todo_id) VALUES (?, ?)");
   for (let i = 0; i < todos.length; i++) {
     stmt.run(i + 1, todos[i].id);
@@ -273,9 +273,10 @@ export function saveLastResult(todos: TodoWithList[]): void {
 
 export function getTodoIdByIndex(idx: number): string | null {
   const db = getDb();
-  const row = db
-    .query<{ todo_id: string }, [number]>("SELECT todo_id FROM _last_result WHERE idx = ?")
-    .get(idx);
+  const row =
+    (db
+      .prepare("SELECT todo_id FROM _last_result WHERE idx = ?")
+      .get(idx) as { todo_id: string } | undefined) ?? null;
   return row?.todo_id ?? null;
 }
 
@@ -288,16 +289,16 @@ export function getStats(): {
   lists: number;
 } {
   const db = getDb();
-  const total = db.query<{ c: number }, []>("SELECT COUNT(*) as c FROM todos").get()!.c;
-  const completed = db
-    .query<{ c: number }, []>("SELECT COUNT(*) as c FROM todos WHERE is_completed = 1")
-    .get()!.c;
+  const total = (db.prepare("SELECT COUNT(*) as c FROM todos").get() as { c: number }).c;
+  const completed = (db
+    .prepare("SELECT COUNT(*) as c FROM todos WHERE is_completed = 1")
+    .get() as { c: number }).c;
   const today = new Date().toISOString().slice(0, 10);
-  const overdue = db
-    .query<{ c: number }, [string]>(
+  const overdue = (db
+    .prepare(
       "SELECT COUNT(*) as c FROM todos WHERE due_date < ? AND is_completed = 0 AND due_date IS NOT NULL"
     )
-    .get(today)!.c;
-  const lists = db.query<{ c: number }, []>("SELECT COUNT(*) as c FROM lists").get()!.c;
+    .get(today) as { c: number }).c;
+  const lists = (db.prepare("SELECT COUNT(*) as c FROM lists").get() as { c: number }).c;
   return { total, completed, overdue, lists };
 }

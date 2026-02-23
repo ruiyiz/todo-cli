@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { setColorEnabled } from "./utils/color.ts";
+import { syncDb } from "./db/connection.ts";
 import { registerShowCommand } from "./commands/show.ts";
 import { registerListCommand } from "./commands/list.ts";
 import { registerAddCommand } from "./commands/add.ts";
@@ -9,6 +10,7 @@ import { registerDeleteCommand } from "./commands/delete.ts";
 import { registerGetCommand } from "./commands/get.ts";
 import { registerTodayCommand } from "./commands/today.ts";
 import { registerStatusCommand } from "./commands/status.ts";
+import { registerSyncCommand } from "./commands/sync.ts";
 
 export function createProgram(): Command {
   const program = new Command();
@@ -30,6 +32,9 @@ export function createProgram(): Command {
       if (opts.color === false) {
         setColorEnabled(false);
       }
+    })
+    .hook("postAction", () => {
+      syncDb();
     });
 
   registerTodayCommand(program);
@@ -41,6 +46,7 @@ export function createProgram(): Command {
   registerCompleteCommand(program);
   registerDeleteCommand(program);
   registerStatusCommand(program);
+  registerSyncCommand(program);
 
   return program;
 }

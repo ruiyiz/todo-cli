@@ -1,4 +1,4 @@
-import type { Database } from "bun:sqlite";
+import type { DbInstance } from "./connection.ts";
 
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS lists (
@@ -38,14 +38,14 @@ CREATE TABLE IF NOT EXISTS _last_result (
 INSERT OR IGNORE INTO lists (id, title) VALUES ('00000000-0000-0000-0000-000000000001', 'Todos');
 `;
 
-export function initSchema(db: Database): void {
+export function initSchema(db: DbInstance): void {
   db.exec(SCHEMA_SQL);
   migrate(db);
 }
 
-function migrate(db: Database): void {
+function migrate(db: DbInstance): void {
   // Add logical_id column if missing (upgrade from older schema)
-  const cols = db.query<{ name: string }, []>("PRAGMA table_info(lists)").all();
+  const cols = db.prepare("PRAGMA table_info(lists)").all() as { name: string }[];
   const hasLogicalId = cols.some((c) => c.name === "logical_id");
   if (!hasLogicalId) {
     db.exec("ALTER TABLE lists ADD COLUMN logical_id INTEGER");
@@ -53,10 +53,10 @@ function migrate(db: Database): void {
 
   // Backfill logical_id for any rows that don't have one
   const unassigned = db
-    .query<{ id: string }, []>("SELECT id FROM lists WHERE logical_id IS NULL ORDER BY created_at")
-    .all();
+    .prepare("SELECT id FROM lists WHERE logical_id IS NULL ORDER BY created_at")
+    .all() as { id: string }[];
   if (unassigned.length > 0) {
-    const maxRow = db.query<{ m: number | null }, []>("SELECT MAX(logical_id) as m FROM lists").get();
+    const maxRow = (db.prepare("SELECT MAX(logical_id) as m FROM lists").get() as { m: number | null } | undefined) ?? null;
     let next = (maxRow?.m ?? 0) + 1;
     const stmt = db.prepare("UPDATE lists SET logical_id = ? WHERE id = ?");
     for (const row of unassigned) {
@@ -68,7 +68,7 @@ function migrate(db: Database): void {
   db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_lists_logical_id ON lists(logical_id)");
 
   // Migrate priority from 4-level (none/low/medium/high) to 2-level (normal/prioritized)
-  const sample = db.query<{ priority: string }, []>("SELECT priority FROM todos LIMIT 1").get();
+  const sample = (db.prepare("SELECT priority FROM todos LIMIT 1").get() as { priority: string } | undefined) ?? null;
   if (sample && ["none", "low", "medium", "high"].includes(sample.priority)) {
     db.exec("DROP TRIGGER IF EXISTS trg_todos_updated_at");
     db.exec(`

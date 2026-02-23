@@ -21,8 +21,8 @@ export function resolveId(input: string): string {
   // 3. Try as UUID prefix
   const db = getDb();
   const matches = db
-    .query<{ id: string }, [string]>("SELECT id FROM todos WHERE id LIKE ? || '%'")
-    .all(input.toLowerCase());
+    .prepare("SELECT id FROM todos WHERE id LIKE ? || '%'")
+    .all(input.toLowerCase()) as { id: string }[];
 
   if (matches.length === 1) return matches[0].id;
   if (matches.length > 1) {
