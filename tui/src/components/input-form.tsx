@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import type { Priority } from "@core/types.ts";
 import { theme } from "../theme.ts";
+import { shiftDate } from "../utils/date-input.ts";
+import { DateFieldDisplay } from "./date-field-display.tsx";
 
 interface Field {
   name: string;
@@ -19,31 +21,6 @@ interface Props {
 }
 
 const PRIORITIES: Priority[] = ["normal", "prioritized"];
-
-function localDateStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function getWeekday(value: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "";
-  return new Date(value + "T00:00:00").toLocaleDateString("en-US", { weekday: "short" });
-}
-
-function shiftDate(value: string, delta: number): string {
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (!value || !dateRegex.test(value)) {
-    return localDateStr(today);
-  }
-  const d = new Date(value + "T00:00:00");
-  d.setDate(d.getDate() + delta);
-  if (d < today) return localDateStr(today);
-  return localDateStr(d);
-}
 
 function getLineCol(value: string, cursorPos: number): { line: number; col: number } {
   const before = value.slice(0, cursorPos);
@@ -232,19 +209,7 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
       return <Text>{selected?.label ?? field.value}</Text>;
     }
     if (field.type === "date") {
-      const weekday = getWeekday(field.value);
-      if (isActive) {
-        const before = field.value.slice(0, cursorPos);
-        const under = field.value[cursorPos] ?? " ";
-        const after = field.value.slice(cursorPos + 1);
-        return (
-          <Box>
-            <Box><Text>{before}</Text><Text inverse>{under}</Text><Text>{after}</Text></Box>
-            {weekday && <Text color={theme.accent}>{"  "}[{weekday}]</Text>}
-          </Box>
-        );
-      }
-      return <Box><Text>{field.value}</Text>{weekday && <Text color={theme.accent}>{"  "}[{weekday}]</Text>}</Box>;
+      return <DateFieldDisplay value={field.value} cursorPos={cursorPos} isActive={isActive} />;
     }
     if (field.type === "multiline") {
       return renderMultilineValue(field, isActive);

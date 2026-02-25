@@ -1,28 +1,8 @@
 import React, { useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { theme } from "../theme.ts";
-
-function localDateStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function getWeekday(value: string): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "";
-  return new Date(value + "T00:00:00").toLocaleDateString("en-US", { weekday: "short" });
-}
-
-function shiftDate(value: string, delta: number): string {
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (!value || !dateRegex.test(value)) {
-    return localDateStr(today);
-  }
-  const d = new Date(value + "T00:00:00");
-  d.setDate(d.getDate() + delta);
-  if (d < today) return localDateStr(today);
-  return localDateStr(d);
-}
+import { shiftDate } from "../utils/date-input.ts";
+import { DateFieldDisplay } from "./date-field-display.tsx";
 
 interface Props {
   label: string;
@@ -81,10 +61,7 @@ export function InlineInput({ label, initialValue = "", onSubmit, onCancel }: Pr
     <Box flexDirection="column" borderStyle="single" borderLeft={false} borderRight={false} borderColor={theme.accent} paddingX={1}>
       <Text bold color={theme.accent}>{label}</Text>
       <Text> </Text>
-      <Box>
-        <Text>{value.slice(0, cursorPos)}<Text inverse>{value[cursorPos] ?? " "}</Text>{value.slice(cursorPos + 1)}</Text>
-        {getWeekday(value) && <Text color={theme.accent}>{"  "}[{getWeekday(value)}]</Text>}
-      </Box>
+      <DateFieldDisplay value={value} cursorPos={cursorPos} isActive={true} />
       <Text> </Text>
       <Text dimColor>↑/↓: adjust date  Enter: submit  Esc: cancel</Text>
     </Box>
