@@ -3,6 +3,7 @@ import { Box, Text, useInput } from "ink";
 import { theme } from "../theme.ts";
 import { shiftDate } from "../utils/date-input.ts";
 import { DateFieldDisplay } from "./date-field-display.tsx";
+import { moveToLineStart, moveToLineEnd, killToLineStart, killToLineEnd, deleteWordBackward, moveWordBackward, moveWordForward } from "../utils/readline.ts";
 
 interface Props {
   label: string;
@@ -36,11 +37,11 @@ export function InlineInput({ label, initialValue = "", onSubmit, onCancel }: Pr
       setCursorPos(newVal.length);
       return;
     }
-    if (key.leftArrow) {
+    if (key.leftArrow && !key.ctrl) {
       setCursorPos((prev) => Math.max(0, prev - 1));
       return;
     }
-    if (key.rightArrow) {
+    if (key.rightArrow && !key.ctrl) {
       setCursorPos((prev) => Math.min(value.length, prev + 1));
       return;
     }
@@ -48,6 +49,21 @@ export function InlineInput({ label, initialValue = "", onSubmit, onCancel }: Pr
       if (cursorPos > 0) {
         setValue((prev) => prev.slice(0, cursorPos - 1) + prev.slice(cursorPos));
         setCursorPos((prev) => prev - 1);
+      }
+      return;
+    }
+    if (key.ctrl) {
+      let result: { value: string; cursorPos: number } | null = null;
+      if (key.leftArrow) result = moveWordBackward(value, cursorPos);
+      else if (key.rightArrow) result = moveWordForward(value, cursorPos);
+      else if (input === "u") result = killToLineStart(value, cursorPos);
+      else if (input === "a") result = moveToLineStart(value, cursorPos);
+      else if (input === "e") result = moveToLineEnd(value, cursorPos);
+      else if (input === "k") result = killToLineEnd(value, cursorPos);
+      else if (input === "w") result = deleteWordBackward(value, cursorPos);
+      if (result) {
+        setValue(result.value);
+        setCursorPos(result.cursorPos);
       }
       return;
     }

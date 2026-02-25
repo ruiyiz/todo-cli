@@ -4,6 +4,7 @@ import type { Priority } from "@core/types.ts";
 import { theme } from "../theme.ts";
 import { shiftDate } from "../utils/date-input.ts";
 import { DateFieldDisplay } from "./date-field-display.tsx";
+import { moveToLineStart, moveToLineEnd, killToLineStart, killToLineEnd, deleteWordBackward, moveWordBackward, moveWordForward } from "../utils/readline.ts";
 
 interface Field {
   name: string;
@@ -138,6 +139,22 @@ export function InputForm({ title, fields: initialFields, onSubmit, onCancel }: 
         setCursorPos(posFromLineCol(field.value, line - 1, col));
       } else if (key.downArrow && line < lines.length - 1) {
         setCursorPos(posFromLineCol(field.value, line + 1, col));
+      }
+      return;
+    }
+
+    if (key.ctrl) {
+      let result: { value: string; cursorPos: number } | null = null;
+      if (key.leftArrow) result = moveWordBackward(field.value, cursorPos);
+      else if (key.rightArrow) result = moveWordForward(field.value, cursorPos);
+      else if (input === "u") result = killToLineStart(field.value, cursorPos);
+      else if (input === "a") result = moveToLineStart(field.value, cursorPos);
+      else if (input === "e") result = moveToLineEnd(field.value, cursorPos);
+      else if (input === "k") result = killToLineEnd(field.value, cursorPos);
+      else if (input === "w") result = deleteWordBackward(field.value, cursorPos);
+      if (result) {
+        updateField(activeField, result.value);
+        setCursorPos(result.cursorPos);
       }
       return;
     }

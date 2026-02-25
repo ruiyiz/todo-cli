@@ -5,6 +5,7 @@ import { useSearch } from "../hooks/use-search.ts";
 import { TodoRow } from "./todo-row.tsx";
 import { InlineInput } from "./inline-input.tsx";
 import { ConfirmDialog } from "./confirm-dialog.tsx";
+import { deleteWordBackward } from "../utils/readline.ts";
 import {
   completeTodo,
   updateTodo,
@@ -116,6 +117,17 @@ export function SearchOverlay({ listId, listTitle, onClose, onOpen }: Props) {
     }
     if (code === 0x04 && currentTodo) {
       setSubModal("confirmDelete");
+      return;
+    }
+
+    if (code === 0x15) { // Ctrl+U: clear query
+      setQuery("");
+      setCursor(0);
+      return;
+    }
+    if (code === 0x17) { // Ctrl+W: delete word backward
+      setQuery((prev) => deleteWordBackward(prev, prev.length).value);
+      setCursor(0);
       return;
     }
 
