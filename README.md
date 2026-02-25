@@ -84,6 +84,58 @@ Todos can be referenced by:
 
 Todos are stored in a local SQLite database at `~/.local/share/todo/todo.db`. Override with the `TODO_DB_PATH` environment variable.
 
+## Sync (Turso)
+
+The CLI and TUI support cross-device sync via a [Turso](https://turso.tech) remote database. The local file acts as an embedded replica — reads are always local and fast.
+
+### Setting up sync on a new machine
+
+**1. Get your credentials from the machine that already has sync configured:**
+
+```bash
+cat ~/.config/todo/config.json
+```
+
+**2. Create the config file on the new machine:**
+
+```bash
+mkdir -p ~/.config/todo
+cat > ~/.config/todo/config.json << 'EOF'
+{
+  "turso": {
+    "url": "libsql://your-db-name-username.turso.io",
+    "authToken": "your-token-here"
+  }
+}
+EOF
+```
+
+**3. Pull the database from the remote:**
+
+```bash
+todo sync
+```
+
+That's it. The local replica is created and populated from the remote.
+
+### How sync works
+
+- `todo sync` — explicit pull/push from the CLI
+- `todo-tui` — syncs automatically on open (pull) and close (push)
+- All other CLI commands read from the local replica with no network round-trip
+
+### Creating a new Turso database (first-time setup)
+
+```bash
+# Install Turso CLI
+curl -sSfL https://get.tur.so/install.sh | bash
+
+turso auth login
+turso db create todo
+turso db show todo --url      # → url
+turso db tokens create todo   # → authToken
+```
+
 ## Tech Stack
 
 - [Bun](https://bun.sh) — runtime & SQLite driver

@@ -24,13 +24,12 @@ export function getDb(): DbInstance {
 
   const { url, authToken } = getTursoConfig();
   if (url && authToken) {
-    db = new Database(dbPath, { syncUrl: url, authToken } as any);
+    db = new Database(dbPath, { syncUrl: url, authToken, offline: true } as any);
   } else {
     db = new Database(dbPath);
+    db.exec("PRAGMA journal_mode = WAL");
+    db.exec("PRAGMA foreign_keys = ON");
   }
-
-  db.exec("PRAGMA journal_mode = WAL");
-  db.exec("PRAGMA foreign_keys = ON");
 
   initSchema(db);
   return db;
