@@ -12,7 +12,7 @@ process.stdout.write(enterAltScreen + "\x1b[H\x1b[2J");
 getDb();
 syncDb();
 
-const { waitUntilExit } = render(<App />);
+const { waitUntilExit } = render(<App />, { exitOnCtrlC: false });
 
 waitUntilExit().then(() => {
   syncDb();
