@@ -24,7 +24,16 @@ export function getDb(): DbInstance {
 
   const { url, authToken } = getTursoConfig();
   if (url && authToken) {
-    db = new Database(dbPath, { syncUrl: url, authToken, offline: true } as any);
+    db = new Database(dbPath, {
+      syncUrl: url,
+      authToken,
+      offline: true,
+    } as any);
+    try {
+      (db as any).sync();
+    } catch {
+      // Offline at startup - will use local cache
+    }
   } else {
     db = new Database(dbPath);
     db.exec("PRAGMA journal_mode = WAL");
@@ -40,11 +49,11 @@ export function getDbPathInfo(): string {
 }
 
 export function syncDb(): void {
-  if (!db) return;
   const { url } = getTursoConfig();
   if (!url) return;
+  const dbInstance = getDb();
   try {
-    (db as any).sync();
+    (dbInstance as any).sync();
   } catch {
     // Offline - sync failed silently
   }
