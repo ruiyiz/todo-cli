@@ -1,6 +1,8 @@
 import React from "react";
 import { Box, Text, useInput } from "ink";
 import { theme } from "../theme.ts";
+import { useAppState } from "../context.ts";
+import type { ViewName } from "../state.ts";
 
 interface Props {
   onClose: () => void;
@@ -12,76 +14,93 @@ interface Section {
   keys: [string, string][];
 }
 
-const SECTIONS: Section[] = [
-  {
-    title: "Global",
-    color: "magenta",
-    keys: [
-      ["Ctrl+C", "Quit"],
-      ["Esc", "Back / Close / Clear selection"],
-      ["Tab", "Switch top-level view"],
-      ["/", "Fuzzy search todos"],
-      ["?", "Toggle help"],
-    ],
-  },
-  {
-    title: "Navigation",
-    color: "blue",
-    keys: [
-      ["j / ↓", "Move cursor down"],
-      ["k / ↑", "Move cursor up"],
-      ["Enter", "Select / Open"],
-    ],
-  },
-  {
-    title: "Quick Actions",
-    color: "green",
-    keys: [
-      ["x", "Toggle complete"],
-      ["p", "Toggle priority (normal / prioritized)"],
-      ["t", "Set due date to today"],
-      ["T", "Set due date to tomorrow"],
-      ["s", "Set due date (type any date)"],
-      ["Space", "Toggle select for bulk edit"],
-    ],
-  },
-  {
-    title: "CRUD",
-    color: "yellow",
-    keys: [
-      ["a", "Add todo / list"],
-      ["e", "Edit todo / bulk edit selected"],
-      ["d", "Delete todo / list"],
-      ["r", "Rename list"],
-    ],
-  },
-  {
-    title: "Today View",
-    color: "cyan",
-    keys: [
-      ["g", "Toggle grouping (date / list)"],
-    ],
-  },
-  {
-    title: "List Detail",
-    color: "cyan",
-    keys: [
-      ["f", "Cycle filter (active / completed / all)"],
-    ],
-  },
-  {
-    title: "Forms",
-    color: "white",
-    keys: [
-      ["Tab / Shift+Tab", "Move between fields"],
-      ["Enter", "Submit"],
-      ["Esc", "Cancel"],
-      ["j/k", "Toggle priority (on priority field)"],
-    ],
-  },
-];
+function getSections(view: ViewName): Section[] {
+  const crudKeys: [string, string][] = view === "listIndex"
+    ? [["a", "Add list"], ["d", "Delete list"], ["r", "Rename list"]]
+    : view === "today" || view === "listDetail"
+    ? [["a", "Add todo"], ["e", "Edit todo / bulk edit selected"], ["d", "Delete todo"]]
+    : [["e", "Edit todo"], ["d", "Delete todo"]];
+
+  const sections: Section[] = [
+    {
+      title: "Global",
+      color: "magenta",
+      keys: [
+        ["Ctrl+Q", "Quit"],
+        ["Esc", "Back / Close / Clear selection"],
+        ["Tab", "Switch top-level view"],
+        ["/", "Fuzzy search todos"],
+        ["?", "Toggle help"],
+      ],
+    },
+    {
+      title: "Navigation",
+      color: "blue",
+      keys: [
+        ["j / ↓", "Move cursor down"],
+        ["k / ↑", "Move cursor up"],
+        ["Enter", "Select / Open"],
+      ],
+    },
+  ];
+
+  if (view !== "listIndex") {
+    sections.push({
+      title: "Quick Actions",
+      color: "green",
+      keys: [
+        ["x", "Toggle complete"],
+        ["p", "Toggle priority (normal / prioritized)"],
+        ["t", "Set due date to today"],
+        ["T", "Set due date to tomorrow"],
+        ["s", "Set due date (type any date)"],
+        ["Space", "Toggle select for bulk edit"],
+      ],
+    });
+  }
+
+  sections.push({ title: "CRUD", color: "yellow", keys: crudKeys });
+
+  if (view === "today") {
+    sections.push({ title: "Today View", color: "cyan", keys: [["g", "Toggle grouping (date / list)"]] });
+  }
+
+  if (view === "listDetail") {
+    sections.push({ title: "List Detail", color: "cyan", keys: [["f", "Cycle filter (active / completed / all)"]] });
+  }
+
+  sections.push(
+    {
+      title: "Forms",
+      color: "white",
+      keys: [
+        ["Tab / Shift+Tab", "Move between fields"],
+        ["Enter", "Submit"],
+        ["Esc", "Cancel"],
+        ["j/k", "Toggle priority (on priority field)"],
+      ],
+    },
+    {
+      title: "Search",
+      color: "white",
+      keys: [
+        ["^X", "Toggle complete"],
+        ["^P", "Toggle priority"],
+        ["^S", "Set due date"],
+        ["^D", "Delete todo"],
+        ["Enter", "Open todo"],
+        ["Esc", "Close search"],
+      ],
+    },
+  );
+
+  return sections;
+}
 
 export function HelpOverlay({ onClose }: Props) {
+  const { state } = useAppState();
+  const sections = getSections(state.view);
+
   useInput((_input, key) => {
     if (_input === "?") onClose();
   });
@@ -90,7 +109,7 @@ export function HelpOverlay({ onClose }: Props) {
     <Box flexDirection="column" borderStyle="single" borderColor={theme.accent} paddingX={2} paddingY={1}>
       <Text bold color={theme.accent}>Keyboard Shortcuts</Text>
       <Text> </Text>
-      {SECTIONS.map((section) => (
+      {sections.map((section) => (
         <Box key={section.title} flexDirection="column" marginBottom={1}>
           <Text bold color={section.color as any}>{section.title}</Text>
           {section.keys.map(([k, desc]) => (
@@ -102,7 +121,6 @@ export function HelpOverlay({ onClose }: Props) {
           ))}
         </Box>
       ))}
-      <Text dimColor>Press </Text>
       <Box>
         <Text bold color={theme.selection}>?</Text>
         <Text dimColor> or </Text>

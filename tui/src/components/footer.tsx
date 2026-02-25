@@ -12,30 +12,22 @@ function h(key: string, desc: string): Hint {
   return { key, desc };
 }
 
-function getHints(view: string, modal: string, selectionCount: number): Hint[] {
+function getHints(view: string, modal: string, hasStack: boolean): Hint[] {
   if (modal === "search") return [h("^X", "toggle"), h("^P", "priority"), h("^S", "due"), h("^D", "del"), h("Enter", "open"), h("Esc", "close")];
   if (modal !== "none") return [h("Esc", "close"), h("Enter", "submit"), h("Tab", "next field")];
 
-  const sys = [h("/", "search"), h("^C", "quit"), h("?", "help")];
-  const sel = selectionCount > 0 ? [h("e", `bulk edit (${selectionCount})`), h("Esc", "deselect")] : [];
-  const quickActions = [h("x", "toggle"), h("p", "priority"), h("s", "due")];
-  switch (view) {
-    case "today":
-      return [h("Space", "select"), ...sel, ...quickActions, h("a", "add"), h("Enter", "edit"), h("d", "del"), h("g", "group"), h("Tab", "lists"), ...sys];
-    case "listIndex":
-      return [h("Enter", "open"), h("a", "add"), h("r", "rename"), h("d", "delete"), h("Tab", "today"), ...sys];
-    case "listDetail":
-      return [h("Space", "select"), ...sel, ...quickActions, h("a", "add"), h("Enter", "edit"), h("d", "del"), h("f", "filter"), ...(selectionCount === 0 ? [h("Esc", "back")] : []), h("Tab", "today"), ...sys];
-    case "todoDetail":
-      return [...quickActions, h("e", "edit"), h("d", "delete"), h("Esc", "back"), ...sys];
-    default:
-      return sys;
-  }
+  const hints: Hint[] = [h("/", "search")];
+
+  if (view !== "todoDetail") hints.push(h("Tab", view === "today" ? "lists" : "today"));
+  if (hasStack) hints.push(h("Esc", "back"));
+
+  hints.push(h("^Q", "quit"), h("?", "help"));
+  return hints;
 }
 
 export function Footer() {
   const { state } = useAppState();
-  const hints = getHints(state.view, state.modal, state.selectedTodoIds.size);
+  const hints = getHints(state.view, state.modal, state.viewStack.length > 0);
 
   return (
     <Box borderStyle="single" borderTop={true} borderBottom={false} borderLeft={false} borderRight={false} paddingX={1} flexWrap="wrap">

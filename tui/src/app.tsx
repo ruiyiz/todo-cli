@@ -18,7 +18,7 @@ export function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useInput((input, key) => {
-    if (input === "c" && key.ctrl) {
+    if (input === "q" && key.ctrl) {
       exit();
       return;
     }
