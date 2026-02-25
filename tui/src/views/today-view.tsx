@@ -7,7 +7,7 @@ import { SectionHeader } from "../components/section-header.tsx";
 import { ConfirmDialog } from "../components/confirm-dialog.tsx";
 import { InlineInput } from "../components/inline-input.tsx";
 import { InputForm } from "../components/input-form.tsx";
-import { updateTodo, deleteTodo, createTodo, getAllLists } from "@core/db/repository.ts";
+import { updateTodo, deleteTodo, createTodo, getAllLists, queryTodos } from "@core/db/repository.ts";
 import { parseDate, formatDateForDb } from "@core/utils/date.ts";
 import type { TodoWithList } from "@core/models/todo.ts";
 import type { Priority } from "@core/types.ts";
@@ -135,6 +135,11 @@ export function TodayView() {
       dispatch({ type: "OPEN_MODAL", modal: "confirmDelete" });
     } else if (input === "a") {
       dispatch({ type: "OPEN_MODAL", modal: "addTodo" });
+    } else if (input === "l" && currentTodo) {
+      const listTodos = queryTodos({ listId: currentTodo.list_id, isCompleted: false });
+      const targetIdx = listTodos.findIndex(t => t.id === currentTodo.id);
+      dispatch({ type: "PUSH_VIEW", view: "listDetail", listId: currentTodo.list_id });
+      dispatch({ type: "SET_CURSOR", index: targetIdx >= 0 ? targetIdx : 0 });
     }
   });
 
