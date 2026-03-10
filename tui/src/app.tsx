@@ -3,7 +3,6 @@ import { Box, useApp, useInput, useStdout } from "ink";
 import { AppContext } from "./context.ts";
 import { reducer, initialState } from "./state.ts";
 import { Header } from "./components/header.tsx";
-import { Footer } from "./components/footer.tsx";
 import { HelpOverlay } from "./components/help-overlay.tsx";
 import { SearchOverlay } from "./components/search-overlay.tsx";
 import { getListById } from "@core/db/repository.ts";
@@ -85,7 +84,6 @@ export function App() {
             {renderView()}
           </Box>
         )}
-        <Footer />
       </Box>
     </AppContext.Provider>
   );
