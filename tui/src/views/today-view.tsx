@@ -24,7 +24,7 @@ export function TodayView() {
   const thisWeek = applyOverrides(raw.thisWeek);
   const next10Days = applyOverrides(raw.next10Days);
   const highPriority = applyOverrides(raw.highPriority);
-  const all = [...overdue, ...dueToday, ...thisWeek, ...next10Days, ...highPriority];
+  const all = [...dueToday, ...thisWeek, ...next10Days, ...overdue, ...highPriority];
 
   let globalIdx = 0;
   const sections: { label: string; color?: string; todos: TodoWithList[]; startIdx: number }[] = [];
@@ -59,10 +59,6 @@ export function TodayView() {
       globalIdx += todos.length;
     }
   } else {
-    if (overdue.length > 0) {
-      sections.push({ label: "Overdue", color: theme.danger, todos: overdue, startIdx: globalIdx });
-      globalIdx += overdue.length;
-    }
     if (dueToday.length > 0) {
       sections.push({ label: "Today", todos: dueToday, startIdx: globalIdx });
       globalIdx += dueToday.length;
@@ -74,6 +70,10 @@ export function TodayView() {
     if (next10Days.length > 0) {
       sections.push({ label: "Next 10 days", color: theme.accent, todos: next10Days, startIdx: globalIdx });
       globalIdx += next10Days.length;
+    }
+    if (overdue.length > 0) {
+      sections.push({ label: "Overdue", color: theme.danger, todos: overdue, startIdx: globalIdx });
+      globalIdx += overdue.length;
     }
     if (highPriority.length > 0) {
       sections.push({ label: "Prioritized", color: theme.priority, todos: highPriority, startIdx: globalIdx });
